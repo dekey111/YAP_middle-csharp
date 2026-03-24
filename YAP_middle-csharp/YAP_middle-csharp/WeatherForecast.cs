@@ -1,4 +1,4 @@
-namespace WebApplication1
+namespace YAP_middle_csharp
 {
     public class WeatherForecast
     {
