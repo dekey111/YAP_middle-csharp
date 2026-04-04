@@ -2,12 +2,7 @@
 
 namespace YAP_middle_csharp.Interfaces
 {
-    public interface IEventService
+    public interface IEventService : IQueryService<EventModel>, ICommandService<EventModel>
     {
-        Task<IEnumerable<EventModel>> GetAll();
-        Task<EventModel?> GetById(int id);
-        Task<EventModel> Add(EventModel eventModel);
-        Task<EventModel> Edit(EventModel eventModel);
-        Task Delete(int id);
     }
 }

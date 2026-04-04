@@ -5,43 +5,58 @@ namespace YAP_middle_csharp.Services
 {
     public class EventService : IEventService
     {
-        private List<EventModel> _eventModels = new();
-        public async Task<IEnumerable<EventModel>> GetAll()
+        private readonly static List<EventModel> _items = new();
+        public Task<IEnumerable<EventModel>> FindAll()
         {
-            return _eventModels.ToList();
-        }
-        public async Task<EventModel?> GetById(int id)
-        {
-            return _eventModels.Find(x => x.id == id);
+            return Task.FromResult<IEnumerable<EventModel>>(_items.ToList());
         }
 
-        public async Task<EventModel> Add(EventModel eventModel)
+        public Task<EventModel?> FindById(int id)
         {
-            _eventModels.Add(eventModel);
-            return eventModel;
+            var item = _items.FirstOrDefault(x => x.id == id);
+            return Task.FromResult(item);
         }
 
-        public async Task<EventModel> Edit(EventModel eventModel)
+        public Task<int> Create(EventModel entity)
         {
-            var findEvent = await GetById(eventModel.id);
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
+
+            entity.id = _items.Any() ? _items.Max(e => e.id) + 1 : 1;
+            _items.Add(entity);
+            
+            return Task.FromResult(entity.id);
+        }
+
+        public Task<EventModel> Update(EventModel entity)
+        {
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
+
+            var findEvent = _items.FirstOrDefault(x => x.id == entity.id);
             if (findEvent == null)
                 throw new Exception("Event не найден!");
 
-            findEvent.Title = eventModel.Title;
-            findEvent.Description = eventModel.Description;
-            findEvent.StartAt = eventModel.StartAt;
-            findEvent.EndAt = eventModel.EndAt;
+            findEvent.Title = entity.Title;
+            findEvent.Description = entity.Description;
+            findEvent.StartAt = entity.StartAt;
+            findEvent.EndAt = entity.EndAt;
 
-            return findEvent;
+            return Task.FromResult(findEvent);
         }
 
-        public async Task Delete(int id)
+        public Task Delete(EventModel entity)
         {
-            var findEvent = await GetById(id);
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
+
+            var findEvent = _items.FirstOrDefault(x => x.id == entity.id);
             if (findEvent == null)
                 throw new Exception("Event не найден!");
 
-            _eventModels.Remove(findEvent);
+            _items.Remove(findEvent);
+            
+            return Task.CompletedTask;
         }
     }
 }

@@ -1,25 +1,28 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using YAP_middle_csharp.Interfaces;
+using YAP_middle_csharp.Middleware;
 using YAP_middle_csharp.Models;
 
 namespace YAP_middle_csharp.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
-    public class EventsController : Controller
+    [ApiVersion("1.0")]
+    [ApiExplorerSettings(GroupName = "v1")]
+    [Route("api/v{version:apiVersion}/[controller]")]
+    public class EventsController(IEventService eventService) : ControllerBase
     {
-        private readonly IEventService _eventService;
-        public EventsController(IEventService eventService)
-        {
-            _eventService = eventService;
-        }
+        private readonly IEventService _eventService = eventService;
 
+        /// <summary>
+        /// Метод получения всех событий 
+        /// </summary>
+        /// <returns>Возвращается Json-Структура и статусом 200-OK в случае успеха</returns>
         [HttpGet]
-        public async Task<IActionResult> GetAllEvents()
+        public IActionResult GetAllEvents()
         {
             try
             {
-                return Ok(await _eventService.GetAll());
+                return Ok(_eventService.FindAll());
             }
             catch(Exception ex)
             {
@@ -27,12 +30,17 @@ namespace YAP_middle_csharp.Controllers
             }
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetEventById(int id)
+        /// <summary>
+        /// Меьтод получения конкретного события по id
+        /// </summary>
+        /// <param name="id">Принимает существующий id из списка событий</param>
+        /// <returns>Возвращает статус 200 и найденный элемент, либо 404 с комментарием</returns>
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetEventById([FromRoute] int id)
         {
             try
             {
-                var findEvent = await _eventService.GetById(id);
+                var findEvent = await _eventService.FindById(id);
                 if (findEvent == null)
                     return NotFound($"Event c id: {id} не найден!");
 
@@ -44,45 +52,41 @@ namespace YAP_middle_csharp.Controllers
             }
         }
 
+        /// <summary>
+        /// Добавление нового события
+        /// </summary>
+        /// <param name="eventModel">Принимает модель события</param>
+        /// <returns>Возвращает 201 с ссылкой на созданное событие</returns>
         [HttpPost]
-        public async Task<IActionResult> AddEvent(EventModel eventModel)
+        public async Task<IActionResult> AddEvent([FromBody] EventModel eventModel)
         {
             try
             {
-                await Validation(eventModel);
-                var newEvent = await _eventService.Add(eventModel);
-                return CreatedAtAction(nameof(GetEventById), new { id = newEvent.id }, newEvent);
+                int newIdEvent = await _eventService.Create(eventModel);
+                return CreatedAtAction(nameof(GetEventById), new { id = newIdEvent }, eventModel);
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
         }
-        [HttpPut("{id}")]
-        public async Task<IActionResult> EditEvent(int id, EventModel eventModel)
+
+        /// <summary>
+        /// Метод изменения существующего события
+        /// </summary>
+        /// <param name="id">Принимает существующий id из списка событий из query</param>
+        /// <param name="eventModel">Принимает новую модель события из body</param>
+        /// <returns>Возвращает статус 200 OK c изменённым элементом, либо 400 с описанием ошибки</returns>
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> EditEvent([FromRoute] int id, [FromBody] EventModel eventModel)
         {
             try
             {
-                await Validation(eventModel);
-                var editingEvent = await _eventService.Edit(eventModel);
-                return Ok(editingEvent);
-            }
-            catch (Exception ex)
-            {
-                if (ex.Message.Contains("не найден", StringComparison.OrdinalIgnoreCase))
-                    return NotFound(ex.Message);
+                if (id != eventModel.id)
+                    return BadRequest("Проблема в сущности и в запросе! Проверьте правильность данных!");
 
-                return BadRequest(ex.Message);
-            }
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteEvent(int id)
-        {
-            try
-            {
-                await _eventService.Delete(id);
-                return Ok();
+                var updatedEvent = await _eventService.Update(eventModel);
+                return Ok(updatedEvent);
             }
             catch (Exception ex)
             {
@@ -93,22 +97,28 @@ namespace YAP_middle_csharp.Controllers
             }
         }
 
-        private async Task Validation(EventModel eventModel)
+        /// <summary>
+        /// Метод удаления события
+        /// </summary>
+        /// <param name="id">Принимает существующий id из списка событий из query</param>
+        /// <returns>возвращает статус 204 в случае успеха, либо 400 с описанием ошибки</returns>
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> DeleteEvent([FromRoute] int id)
         {
-            if(eventModel == null)
-                throw new ArgumentNullException(nameof(eventModel));
+            try
+            {
+                var findEvent = await _eventService.FindById(id);
 
-            if (string.IsNullOrEmpty(eventModel.Title))
-                throw new Exception("Поле заголовок не может быть пустым!");
+                if (findEvent == null)
+                    return NotFound($"Event c id: {id} не найден!");
 
-            if (eventModel.StartAt == default)
-                throw new Exception("Поле дата начала не может быть пустым!");
-
-            if (eventModel.EndAt == default)
-                throw new Exception("Поле дата окончания не может быть пустым!");
-
-            if (eventModel.StartAt > eventModel.EndAt)
-                throw new Exception("Дата окончания не может быть раньше дате начала!");
+                await _eventService.Delete(findEvent);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }
