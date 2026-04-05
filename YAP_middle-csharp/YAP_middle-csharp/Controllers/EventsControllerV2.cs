@@ -1,16 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Diagnostics;
 using YAP_middle_csharp.Interfaces;
-using YAP_middle_csharp.Middleware;
 using YAP_middle_csharp.Models;
 
 namespace YAP_middle_csharp.Controllers
 {
     [ApiController]
-    [ApiVersion("1.0")]
-    [ApiExplorerSettings(GroupName = "v1")]
+    [ApiVersion("2.0")]
+    [ApiExplorerSettings(GroupName = "v2")]
     [Route("api/v{version:apiVersion}/[controller]")]
-    public class EventsController(IEventService eventService, IValidator<EventResponse> validator) : ControllerBase
+    public class EventsControllerV2(IEventService eventService, IValidator<EventResponse> validator) : ControllerBase
     {
         private readonly IEventService _eventService = eventService;
         private readonly IValidator<EventResponse> _validator = validator;
@@ -26,7 +24,7 @@ namespace YAP_middle_csharp.Controllers
             {
                 return Ok(_eventService.FindAll());
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
