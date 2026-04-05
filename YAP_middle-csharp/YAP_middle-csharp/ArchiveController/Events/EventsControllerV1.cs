@@ -1,17 +1,18 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Diagnostics;
 using YAP_middle_csharp.Interfaces;
+using YAP_middle_csharp.Middleware;
 using YAP_middle_csharp.Models;
 
-namespace YAP_middle_csharp.Controllers
+namespace YAP_middle_csharp.ArchiveController.Events
 {
     [ApiController]
-    [ApiVersion("2.0")]
-    [ApiExplorerSettings(GroupName = "v2")]
-    [Route("api/v{version:apiVersion}/[controller]")]
-    public class EventsControllerV2(IEventService eventService, IValidator<EventResponse> validator) : ControllerBase
+    [ApiVersion("1.0")]
+    [ApiExplorerSettings(GroupName = "v1")]
+    [Route("api/v{version:apiVersion}/events")]
+    public class EventsControllerV1(IEventService eventService) : ControllerBase
     {
         private readonly IEventService _eventService = eventService;
-        private readonly IValidator<EventResponse> _validator = validator;
 
         /// <summary>
         /// Метод получения всех событий 
@@ -24,7 +25,7 @@ namespace YAP_middle_csharp.Controllers
             {
                 return Ok(_eventService.FindAll());
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return BadRequest(ex.Message);
             }
@@ -58,24 +59,12 @@ namespace YAP_middle_csharp.Controllers
         /// <param name="eventModel">Принимает модель события</param>
         /// <returns>Возвращает 201 с ссылкой на созданное событие</returns>
         [HttpPost]
-        public async Task<IActionResult> AddEvent([FromBody] EventRequest eventRequest)
+        public async Task<IActionResult> AddEvent([FromBody] EventResponse eventResponse)
         {
             try
             {
-                var eventModel = new EventResponse
-                {
-                    Title = eventRequest.Title,
-                    Description = eventRequest.Description,
-                    StartAt = eventRequest.StartAt,
-                    EndAt = eventRequest.EndAt
-                };
-
-                var errors = _validator.GetErrors(eventModel).ToList();
-                if (errors.Any())
-                    return BadRequest(new { Message = "Ошибка валидации", Errors = errors });
-
-                int newIdEvent = await _eventService.Create(eventModel);
-                return CreatedAtAction(nameof(GetEventById), new { id = newIdEvent }, eventModel);
+                int newIdEvent = await _eventService.Create(eventResponse);
+                return CreatedAtAction(nameof(GetEventById), new { id = newIdEvent }, eventResponse);
             }
             catch (Exception ex)
             {
@@ -96,10 +85,6 @@ namespace YAP_middle_csharp.Controllers
             {
                 if (id != eventModel.id)
                     return BadRequest("Проблема в сущности и в запросе. \nПроверьте правильность данных!");
-
-                var errors = _validator.GetErrors(eventModel).ToList();
-                if (errors.Any())
-                    return BadRequest(new { Message = "Ошибка валидации", Errors = errors });
 
                 var updatedEvent = await _eventService.Update(eventModel);
                 return Ok(updatedEvent);
