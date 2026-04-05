@@ -8,7 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddScoped<IEventService, EventService>(); 
-builder.Services.AddTransient<IValidator<EventModel>, EventValidator>();
+builder.Services.AddTransient<IValidator<EventResponse>, EventValidator>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddApiVersioning();

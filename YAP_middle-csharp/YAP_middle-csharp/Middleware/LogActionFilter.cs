@@ -1,10 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc.Filters;
-using System.Web.Http.Controllers;
-using System.Web.Http.Filters;
 
 namespace YAP_middle_csharp.Middleware
 {
-    public class LogActionFilter : Microsoft.AspNetCore.Mvc.Filters.IActionFilter
+    public class LogActionFilter : IActionFilter
     {
         public void OnActionExecuting(ActionExecutingContext context)
         {

@@ -3,9 +3,9 @@ using YAP_middle_csharp.Models;
 
 namespace YAP_middle_csharp.Validator
 {
-    public class EventValidator : IValidator<EventModel>
+    public class EventValidator : IValidator<EventResponse>
     {
-        public IEnumerable<string> GetErrors(EventModel item)
+        public IEnumerable<string> GetErrors(EventResponse item)
         {
             if (item == null)
             {
@@ -25,7 +25,7 @@ namespace YAP_middle_csharp.Validator
             if (item.StartAt != default && item.EndAt != default && item.StartAt > item.EndAt)
                 yield return "Дата окончания не может быть раньше даты начала!";
         }
-        public bool IsValid(EventModel item)
+        public bool IsValid(EventResponse item)
         {
             return !GetErrors(item).Any();
         }

@@ -5,30 +5,30 @@ namespace YAP_middle_csharp.Services
 {
     public class EventService : IEventService
     {
-        private readonly static List<EventModel> _items = new();
-        public Task<IEnumerable<EventModel>> FindAll()
+        private readonly static List<EventResponse> _items = new();
+        public Task<IEnumerable<EventResponse>> FindAll()
         {
-            return Task.FromResult<IEnumerable<EventModel>>(_items.ToList());
+            return Task.FromResult<IEnumerable<EventResponse>>(_items.ToList());
         }
 
-        public Task<EventModel?> FindById(int id)
+        public Task<EventResponse?> FindById(int id)
         {
             var item = _items.FirstOrDefault(x => x.id == id);
             return Task.FromResult(item);
         }
 
-        public Task<int> Create(EventModel entity)
+        public Task<int> Create(EventResponse entity)
         {
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
 
-            entity.id = _items.Any() ? _items.Max(e => e.id) + 1 : 1;
+            entity.id = _items.Any() ? _items.Max(x => x.id) + 1 : 1;
             _items.Add(entity);
             
             return Task.FromResult(entity.id);
         }
 
-        public Task<EventModel> Update(EventModel entity)
+        public Task<EventResponse> Update(EventResponse entity)
         {
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
@@ -45,7 +45,7 @@ namespace YAP_middle_csharp.Services
             return Task.FromResult(findEvent);
         }
 
-        public Task Delete(EventModel entity)
+        public Task Delete(EventResponse entity)
         {
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
