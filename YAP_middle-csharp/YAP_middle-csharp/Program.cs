@@ -11,7 +11,6 @@ builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddTransient<IValidator<EventResponse>, EventValidator>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddApiVersioning();
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

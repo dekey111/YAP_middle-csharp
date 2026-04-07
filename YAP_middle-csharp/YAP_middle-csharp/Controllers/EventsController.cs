@@ -5,9 +5,7 @@ using YAP_middle_csharp.Models;
 namespace YAP_middle_csharp.Controllers
 {
     [ApiController]
-    [ApiVersion("2.0")]
-    [ApiExplorerSettings(GroupName = "v2")]
-    [Route("api/v{version:apiVersion}/[controller]")]
+    [Route("api/[controller]")]
     public class EventsController(IEventService eventService, IValidator<EventResponse> validator) : ControllerBase
     {
         private readonly IEventService _eventService = eventService;
