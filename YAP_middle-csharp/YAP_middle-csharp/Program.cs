@@ -15,11 +15,14 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddProblemDetails();
 
-builder.Services.AddScoped<LogActionFilter>();
-builder.Services.AddScoped<AsyncLogActionFilter>();
+
 
 var app = builder.Build();
+app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
+app.UseExceptionHandler();
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

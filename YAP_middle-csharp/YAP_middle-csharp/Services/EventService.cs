@@ -35,7 +35,7 @@ namespace YAP_middle_csharp.Services
 
             var findEvent = _items.FirstOrDefault(x => x.id == entity.id);
             if (findEvent == null)
-                throw new Exception("Event не найден!");
+                throw new KeyNotFoundException("Event не найден!");
 
             findEvent.Title = entity.Title;
             findEvent.Description = entity.Description;
@@ -52,7 +52,7 @@ namespace YAP_middle_csharp.Services
 
             var findEvent = _items.FirstOrDefault(x => x.id == entity.id);
             if (findEvent == null)
-                throw new Exception("Event не найден!");
+                throw new KeyNotFoundException("Event не найден!");
 
             _items.Remove(findEvent);
             

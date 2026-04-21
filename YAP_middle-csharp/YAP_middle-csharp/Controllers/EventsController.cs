@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 using YAP_middle_csharp.Interfaces;
 using YAP_middle_csharp.Models;
 
@@ -18,14 +19,7 @@ namespace YAP_middle_csharp.Controllers
         [HttpGet]
         public IActionResult GetAllEvents()
         {
-            try
-            {
-                return Ok(_eventService.FindAll());
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return Ok(_eventService.FindAll());
         }
 
         /// <summary>
@@ -36,18 +30,11 @@ namespace YAP_middle_csharp.Controllers
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetEventById([FromRoute] int id)
         {
-            try
-            {
-                var findEvent = await _eventService.FindById(id);
-                if (findEvent == null)
-                    return NotFound($"Event c id: {id} не найден!");
+            var findEvent = await _eventService.FindById(id);
+            if (findEvent == null)
+                return NotFound($"Event c id: {id} не найден!");
 
-                return Ok(findEvent);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return Ok(findEvent);
         }
 
         /// <summary>
@@ -58,27 +45,20 @@ namespace YAP_middle_csharp.Controllers
         [HttpPost]
         public async Task<IActionResult> AddEvent([FromBody] EventRequest eventRequest)
         {
-            try
+            var eventModel = new EventResponse
             {
-                var eventModel = new EventResponse
-                {
-                    Title = eventRequest.Title,
-                    Description = eventRequest.Description,
-                    StartAt = eventRequest.StartAt,
-                    EndAt = eventRequest.EndAt
-                };
+                Title = eventRequest.Title,
+                Description = eventRequest.Description,
+                StartAt = eventRequest.StartAt,
+                EndAt = eventRequest.EndAt
+            };
 
-                var errors = _validator.GetErrors(eventModel).ToList();
-                if (errors.Any())
-                    return BadRequest(new { Message = "Ошибка валидации", Errors = errors });
+            var errors = _validator.GetErrors(eventModel).ToList();
+            if (errors.Any())
+                throw new ValidationException(string.Join("; ", errors));
 
-                int newIdEvent = await _eventService.Create(eventModel);
-                return CreatedAtAction(nameof(GetEventById), new { id = newIdEvent }, eventModel);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            int newIdEvent = await _eventService.Create(eventModel);
+            return CreatedAtAction(nameof(GetEventById), new { id = newIdEvent }, eventModel);
         }
 
         /// <summary>
@@ -90,25 +70,15 @@ namespace YAP_middle_csharp.Controllers
         [HttpPut("{id:int}")]
         public async Task<IActionResult> EditEvent([FromRoute] int id, [FromBody] EventResponse eventModel)
         {
-            try
-            {
-                if (id != eventModel.id)
-                    return BadRequest("Проблема в сущности и в запросе. \nПроверьте правильность данных!");
+            if (id != eventModel.id)
+                return BadRequest("Проблема в сущности и в запросе. \nПроверьте правильность данных!");
 
-                var errors = _validator.GetErrors(eventModel).ToList();
-                if (errors.Any())
-                    return BadRequest(new { Message = "Ошибка валидации", Errors = errors });
+            var errors = _validator.GetErrors(eventModel).ToList();
+            if (errors.Any())
+                throw new ValidationException(string.Join("; ", errors));
 
-                var updatedEvent = await _eventService.Update(eventModel);
-                return Ok(updatedEvent);
-            }
-            catch (Exception ex)
-            {
-                if (ex.Message.Contains("не найден", StringComparison.OrdinalIgnoreCase))
-                    return NotFound(ex.Message);
-
-                return BadRequest(ex.Message);
-            }
+            var updatedEvent = await _eventService.Update(eventModel);
+            return Ok(updatedEvent);
         }
 
         /// <summary>
@@ -119,20 +89,13 @@ namespace YAP_middle_csharp.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteEvent([FromRoute] int id)
         {
-            try
-            {
-                var findEvent = await _eventService.FindById(id);
+            var findEvent = await _eventService.FindById(id);
 
-                if (findEvent == null)
-                    return NotFound($"Event c id: {id} не найден!");
+            if (findEvent == null)
+                return NotFound($"Event c id: {id} не найден!");
 
-                await _eventService.Delete(findEvent);
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            await _eventService.Delete(findEvent);
+            return NoContent();
         }
     }
 }
