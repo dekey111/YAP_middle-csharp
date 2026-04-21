@@ -13,9 +13,14 @@ namespace YAP_middle_csharp.Controllers
         private readonly IValidator<EventResponse> _validator = validator;
 
         /// <summary>
-        /// Метод получения всех событий 
+        /// Метод получения всех событий
         /// </summary>
-        /// <returns>Возвращается Json-Структура и статусом 200-OK в случае успеха</returns>
+        /// <param name="title">Опциональное поле фильтрации по наименованию</param>
+        /// <param name="from">Опциональное поле фильтрации по не ранее даты</param>
+        /// <param name="to">Опциональное поле фильтрации по не позднее даты</param>
+        /// <param name="page">Опциональное поле для выбора страницы, со значением по умолчанию = 1 </param>
+        /// <param name="pageSize">Опциональное поле для выбора количества выгружаемых строк, со значением по умолчанию = 10</param>
+        /// <returns>Возвращается Json-Структуру и статусом 200-OK в случае успеха</returns>
         [HttpGet]
         public IActionResult GetAllEvents(
             [FromQuery] string? title,
