@@ -6,7 +6,8 @@ namespace YAP_middle_csharp.Services
     public class EventService : IEventService
     {
         private readonly static List<EventResponse> _items = new();
-        public Task<IEnumerable<EventResponse>> FindAll(string? title, DateTime? from, DateTime? to)
+        public Task<PaginatedResult<EventResponse>> FindAll(string? title, DateTime? from, DateTime? to,
+            int page, int pageSize)
         {
             var query = _items.AsEnumerable();
 
@@ -22,8 +23,18 @@ namespace YAP_middle_csharp.Services
             {
                 query = query.Where(x => x.EndAt.Date <= to.Value.Date);
             }
+            var totalCount = query.Count();
+            query = query.OrderByDescending(x => x.EndAt).Skip((page - 1) * pageSize).Take(pageSize);
 
-            return Task.FromResult(query.ToList().AsEnumerable());
+            var result = new PaginatedResult<EventResponse>
+            {
+                Items = query,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
+
+            return Task.FromResult(result);
         }
 
         public Task<EventResponse?> FindById(int id)
