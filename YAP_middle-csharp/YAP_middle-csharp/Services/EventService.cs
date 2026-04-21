@@ -6,8 +6,8 @@ namespace YAP_middle_csharp.Services
     public class EventService : IEventService
     {
         private readonly static List<EventResponse> _items = new();
-        public Task<PaginatedResult<EventResponse>> FindAll(string? title, DateTime? from, DateTime? to,
-            int page, int pageSize)
+        public Task<PaginatedResult<EventResponse>> FindAll(string? title = null, DateTime? from = null, DateTime? to = null,
+            int page = 1, int pageSize = 10)
         {
             var query = _items.AsEnumerable();
 

@@ -22,14 +22,15 @@ namespace YAP_middle_csharp.Controllers
         /// <param name="pageSize">Опциональное поле для выбора количества выгружаемых строк, со значением по умолчанию = 10</param>
         /// <returns>Возвращается Json-Структуру и статусом 200-OK в случае успеха</returns>
         [HttpGet]
-        public IActionResult GetAllEvents(
+        public async Task<IActionResult> GetAllEvents(
             [FromQuery] string? title,
             [FromQuery] DateTime? from,
             [FromQuery] DateTime? to,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10)
         {
-            return Ok(_eventService.FindAll(title, from, to, page, pageSize));
+            var result = await _eventService.FindAll(title, from, to, page, pageSize);
+            return Ok(result);
         }
 
         /// <summary>
