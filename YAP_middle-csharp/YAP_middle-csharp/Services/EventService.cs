@@ -6,9 +6,24 @@ namespace YAP_middle_csharp.Services
     public class EventService : IEventService
     {
         private readonly static List<EventResponse> _items = new();
-        public Task<IEnumerable<EventResponse>> FindAll()
+        public Task<IEnumerable<EventResponse>> FindAll(string? title, DateTime? from, DateTime? to)
         {
-            return Task.FromResult<IEnumerable<EventResponse>>(_items.ToList());
+            var query = _items.AsEnumerable();
+
+            if (!string.IsNullOrEmpty(title))
+            {
+                query = query.Where(x => x.Title.Trim().Contains(title, StringComparison.OrdinalIgnoreCase));
+            }
+            if(from.HasValue && from is not null)
+            {
+                query = query.Where(x => x.StartAt.Date >= from.Value.Date);
+            }
+            if(to.HasValue && to is not null)
+            {
+                query = query.Where(x => x.EndAt.Date <= to.Value.Date);
+            }
+
+            return Task.FromResult(query.ToList().AsEnumerable());
         }
 
         public Task<EventResponse?> FindById(int id)

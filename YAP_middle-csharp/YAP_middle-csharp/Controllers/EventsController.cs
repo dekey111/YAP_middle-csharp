@@ -17,9 +17,9 @@ namespace YAP_middle_csharp.Controllers
         /// </summary>
         /// <returns>Возвращается Json-Структура и статусом 200-OK в случае успеха</returns>
         [HttpGet]
-        public IActionResult GetAllEvents()
+        public IActionResult GetAllEvents([FromQuery] string? title, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
         {
-            return Ok(_eventService.FindAll());
+            return Ok(_eventService.FindAll(title, from, to));
         }
 
         /// <summary>
