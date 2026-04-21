@@ -45,11 +45,11 @@
 Для обеспечения надежности бизнес-логики написаны Unit-тесты с использованием xUnit.
 
 Запуск тестов:
-dotnet test <путь до проекта>
-Например: dotnet test C:\Projects\MyUnitTests\MyUnitTests.csproj.
+`dotnet test <путь до проекта>`
+Например: `dotnet test C:\Projects\MyUnitTests\MyUnitTests.csproj`
 
 Запуск тестов по имени:
-dotnet test C:\Projects\MyUnitTests\MyUnitTests.csproj --filter EventsServiceTests
+`dotnet test C:\Projects\MyUnitTests\MyUnitTests.csproj --filter EventsServiceTests`
 
 Для запуска всех тестов выполните команду в корневой папке решения или в папке тестового проекта:
 Тесты покрывают следующие сценарии:
