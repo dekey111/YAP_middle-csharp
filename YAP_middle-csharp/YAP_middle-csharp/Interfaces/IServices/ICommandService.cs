@@ -1,6 +1,6 @@
 ﻿using System.Security.Principal;
 
-namespace YAP_middle_csharp.Interfaces
+namespace YAP_middle_csharp.Interfaces.IServices
 {
     public interface ICommandService<T> where T : class
     {

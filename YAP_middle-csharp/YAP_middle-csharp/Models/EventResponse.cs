@@ -4,7 +4,7 @@ namespace YAP_middle_csharp.Models
 {
     public class EventResponse
     {
-        public int id { get; set; }
+        public int Id { get; set; }
 
         [StringLength(100, MinimumLength = 2, ErrorMessage = "Наименование должно быть от 2 до 100 символов")]
         public required string Title { get; set; }
