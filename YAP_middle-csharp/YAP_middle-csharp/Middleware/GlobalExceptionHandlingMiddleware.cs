@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using System.Net.NetworkInformation;
 
 namespace YAP_middle_csharp.Middleware
 {
@@ -14,7 +15,7 @@ namespace YAP_middle_csharp.Middleware
             _logger = logger;
         }
 
-        public async Task InvokeAsync(HttpContext httpContext)
+        public async Task InvokeAsync(HttpContext httpContext, IProblemDetailsService problemDetailsService)
         {
             try
             {
@@ -22,11 +23,11 @@ namespace YAP_middle_csharp.Middleware
             }
             catch (Exception ex)
             {
-                await HandleException(httpContext, ex);
+                await HandleException(httpContext, ex, problemDetailsService);
             }
         }
 
-        private async Task HandleException(HttpContext httpContext, Exception ex)
+        private async Task HandleException(HttpContext httpContext, Exception ex, IProblemDetailsService problemDetailsService)
         {
             _logger.LogError(
                 ex,
@@ -41,17 +42,36 @@ namespace YAP_middle_csharp.Middleware
             }
 
             var statusCode = MapStatusCode(ex);
+            var title = MapTitleByStatusCode(statusCode);
+            var type = statusCode == StatusCodes.Status400BadRequest ? "https://tools.ietf.org/html/rfc9110#section-15.5.1" : ex.GetType().Name;
 
             httpContext.Response.StatusCode = statusCode;
             httpContext.Response.ContentType = "application/json";
 
-            var error = new ProblemDetails
+            var problemDetails = new ProblemDetails
             {
                 Status = statusCode,
+                Title = title,
+                Type = type,
                 Detail = ex.Message
             };
 
-            await httpContext.Response.WriteAsJsonAsync(error);
+            if (statusCode == StatusCodes.Status400BadRequest)
+            {
+                var errors = new Dictionary<string, string[]>
+                {
+                    { "EventValidation", [ex.Message] }
+                };
+
+                problemDetails.Extensions.TryAdd("errors", errors);
+            }
+
+            await problemDetailsService.TryWriteAsync(new ProblemDetailsContext
+            {
+                Exception = ex,
+                HttpContext = httpContext,
+                ProblemDetails = problemDetails
+            });
         }
 
         private static int MapStatusCode(Exception ex)
@@ -60,6 +80,14 @@ namespace YAP_middle_csharp.Middleware
                 ArgumentException or ValidationException => StatusCodes.Status400BadRequest,
                 KeyNotFoundException => StatusCodes.Status404NotFound,
                 _ => StatusCodes.Status500InternalServerError
+            };
+
+        private static string MapTitleByStatusCode(int statusCode)
+            => statusCode switch
+            {
+                400 => "One or more validation errors occurred",
+                404 => "The specified resource was not found",
+                _ => "Internal Server Error"
             };
     }
 }

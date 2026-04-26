@@ -9,10 +9,10 @@ namespace YAP_middle_csharp.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
-    public class EventsController(IEventService eventService, IValidator<EventResponse> validator) : ControllerBase
+    public class EventsController(IEventService eventService, IValidator<EventModel> validator) : ControllerBase
     {
         private readonly IEventService _eventService = eventService;
-        private readonly IValidator<EventResponse> _validator = validator;
+        private readonly IValidator<EventModel> _validator = validator;
 
         /// <summary>
         /// Метод получения всех событий
@@ -33,7 +33,15 @@ namespace YAP_middle_csharp.Controllers
             [FromQuery, Range(1, 200, ErrorMessage = "Размер страницы должен быть от 1 до 200")] int pageSize = 10)
         {
             var result = await _eventService.FindAll(title, from, to, page, pageSize);
-            return Ok(result);
+            var respondedItems = result.Items.Select(e => new EventResponse(e));
+
+            return Ok(new PaginatedResult<EventResponse>
+            {
+                Items = respondedItems,
+                TotalCount = result.TotalCount,
+                Page = result.Page,
+                PageSize = result.PageSize
+            });
         }
 
         /// <summary>
@@ -50,7 +58,7 @@ namespace YAP_middle_csharp.Controllers
             if (findEvent == null)
                throw new KeyNotFoundException($"Event c id: {id} не найден!");
 
-            return Ok(findEvent);
+            return Ok(new EventResponse(findEvent));
         }
 
         /// <summary>
@@ -63,7 +71,7 @@ namespace YAP_middle_csharp.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> AddEvent([FromBody] EventRequest eventRequest)
         {
-            var eventModel = new EventResponse
+            var eventModel = new EventModel()
             {
                 Title = eventRequest.Title,
                 Description = eventRequest.Description,
@@ -76,7 +84,8 @@ namespace YAP_middle_csharp.Controllers
                 throw new ValidationException(string.Join("; ", errors));
 
             int newIdEvent = await _eventService.Create(eventModel);
-            return CreatedAtAction(nameof(GetEventById), new { id = newIdEvent }, eventModel);
+            var newEvent = new EventResponse(eventModel);
+            return CreatedAtAction(nameof(GetEventById), new { id = newIdEvent }, newEvent);
         }
 
         /// <summary>
@@ -88,17 +97,28 @@ namespace YAP_middle_csharp.Controllers
         [HttpPut("{id:int}")]
         [ProducesResponseType(typeof(EventResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> EditEvent([FromRoute] int id, [FromBody] EventResponse eventModel)
+        public async Task<IActionResult> EditEvent([FromRoute] int id, [FromBody] EventResponse eventResponse)
         {
-            if (id != eventModel.Id)
+            if (id != eventResponse.Id)
                 throw new ArgumentException("Проблема в сущности и в запросе. \nПроверьте правильность данных!");
+
+            var eventModel = new EventModel()
+            {
+                Id = eventResponse.Id,
+                Title = eventResponse.Title,
+                Description = eventResponse.Description,
+                StartAt = eventResponse.StartAt,
+                EndAt = eventResponse.EndAt
+            };
 
             var errors = _validator.GetErrors(eventModel).ToList();
             if (errors.Any())
                 throw new ValidationException(string.Join("; ", errors));
 
             var updatedEvent = await _eventService.Update(eventModel);
-            return Ok(updatedEvent);
+
+            var returnUpdatedEvent = new EventResponse(updatedEvent);
+            return Ok(returnUpdatedEvent);
         }
 
         /// <summary>

@@ -28,7 +28,7 @@ namespace YAP_middle_csharp.Tests
         [Fact]
         public async Task Create_ReturnNewId()
         {
-            var newEvent = new EventResponse { Title = "Хакатон", StartAt = DateTime.Now, EndAt = DateTime.Now.AddMonths(1) };
+            var newEvent = new EventModel { Title = "Хакатон", StartAt = DateTime.Now, EndAt = DateTime.Now.AddMonths(1) };
             var id = await _eventService.Create(newEvent);
             Assert.True(id > 0);
         }
@@ -43,7 +43,7 @@ namespace YAP_middle_csharp.Tests
         [Fact]
         public async Task FindEventById_ReturnExist()
         {
-            var newEvent = new EventResponse { Title = "Рок концерт", StartAt = DateTime.Now.AddMonths(2), EndAt = DateTime.Now.AddMonths(3) };
+            var newEvent = new EventModel { Title = "Рок концерт", StartAt = DateTime.Now.AddMonths(2), EndAt = DateTime.Now.AddMonths(3) };
             var id = await _eventService.Create(newEvent);
             var findEvent = await _eventService.FindById(id);
 
@@ -54,7 +54,7 @@ namespace YAP_middle_csharp.Tests
         [Fact]
         public async Task UpdateEvent_ReturnUpdateEvent()
         {
-            var newEvent = new EventResponse
+            var newEvent = new EventModel
             {
                 Title = "Курсы не по C#",
                 StartAt = DateTime.Now,
@@ -62,7 +62,7 @@ namespace YAP_middle_csharp.Tests
             };
             var id = await _eventService.Create(newEvent);
 
-            var eventToUpdate = new EventResponse
+            var eventToUpdate = new EventModel
             {
                 Id = id,
                 Title = "Курсы C#",
@@ -80,7 +80,7 @@ namespace YAP_middle_csharp.Tests
         [Fact]
         public async Task DeleteEvent_ReturnNoContent()
         {
-            var newEvent = new EventResponse
+            var newEvent = new EventModel
             {
                 Title = "УДАЛИИИТЬ!!!",
                 StartAt = DateTime.Now,
@@ -98,7 +98,7 @@ namespace YAP_middle_csharp.Tests
         [Fact]
         public async Task FilterByTitle_ReturnsMatchingEvents()
         {
-            var newEvent = new EventResponse
+            var newEvent = new EventModel
             {
                 Title = "Курсы по C#",
                 StartAt = DateTime.Now,
@@ -115,7 +115,7 @@ namespace YAP_middle_csharp.Tests
         {
             var today = DateTime.Today;
 
-            var newEvent_BackToFeature = new EventResponse
+            var newEvent_BackToFeature = new EventModel
             {
                 Title = "Назад в будущее!",
                 StartAt = today.AddDays(-5),
@@ -123,7 +123,7 @@ namespace YAP_middle_csharp.Tests
             };
             await _eventService.Create(newEvent_BackToFeature);
 
-            var newEvent_LetGoToPast = new EventResponse
+            var newEvent_LetGoToPast = new EventModel
             {
                 Title = "Вперед в прошлое!",
                 StartAt = today.AddDays(5),
@@ -140,7 +140,7 @@ namespace YAP_middle_csharp.Tests
         public async Task Pagination_ReturnCorrectPage()
         {
             for (int i = 1; i <= 15; i++)
-                await _eventService.Create(new EventResponse { Title = $"Я мистер мисикс: {i}, посмотрите на меня!", StartAt = DateTime.Now, EndAt = DateTime.Now });
+                await _eventService.Create(new EventModel { Title = $"Я мистер мисикс: {i}, посмотрите на меня!", StartAt = DateTime.Now, EndAt = DateTime.Now });
 
             var result = await _eventService.FindAll(page: 2, pageSize: 10);
             Assert.Equal(5, result.Items.Count());
@@ -151,8 +151,8 @@ namespace YAP_middle_csharp.Tests
         public async Task CombinedFilter_ReturnsMatchingEvents()
         {
             var start = new DateTime(2025, 1, 1);
-            await _eventService.Create(new EventResponse { Title = "Совместное", StartAt = start, EndAt = start });
-            await _eventService.Create(new EventResponse { Title = "Одиночное", StartAt = start, EndAt = start });
+            await _eventService.Create(new EventModel { Title = "Совместное", StartAt = start, EndAt = start });
+            await _eventService.Create(new EventModel { Title = "Одиночное", StartAt = start, EndAt = start });
 
             var result = await _eventService.FindAll(title: "Совместное", from: start, to: start);
             Assert.Single(result.Items);
@@ -171,7 +171,7 @@ namespace YAP_middle_csharp.Tests
         [Fact]
         public async Task FailedUpdate_ShouldThrowKeyNotFound_ForNonExistentId()
         {
-            var ev = new EventResponse { Id = 999, Title = "меня не существует", StartAt = DateTime.Now, EndAt = DateTime.Now };
+            var ev = new EventModel { Id = 999, Title = "меня не существует", StartAt = DateTime.Now, EndAt = DateTime.Now };
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _eventService.Update(ev));
         }
 
@@ -184,7 +184,7 @@ namespace YAP_middle_csharp.Tests
         [Fact]
         public async Task FailedUpdate_WhenDatesInvalid()
         {
-            var invalid = new EventResponse()
+            var invalid = new EventModel()
             {
                 Title = "Инвалид",
                 StartAt = DateTime.Now.AddDays(10),
