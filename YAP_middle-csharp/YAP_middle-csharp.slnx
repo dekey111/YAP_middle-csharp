@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="YAP_middle-csharp.Tests/YAP_middle-csharp.Tests.csproj" Id="2c088f49-bb9a-468a-ae80-b6504df75cad" />
   <Project Path="YAP_middle-csharp/YAP_middle-csharp.csproj" />
 </Solution>
