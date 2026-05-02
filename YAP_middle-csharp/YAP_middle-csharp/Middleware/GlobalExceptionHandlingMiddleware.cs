@@ -55,16 +55,12 @@ namespace YAP_middle_csharp.Middleware
                 Type = type,
                 Detail = ex.Message
             };
-
-            if (statusCode == StatusCodes.Status400BadRequest)
+            
+            var errors = new Dictionary<string, string[]>
             {
-                var errors = new Dictionary<string, string[]>
-                {
-                    { "EventValidation", [ex.Message] }
-                };
-
-                problemDetails.Extensions.TryAdd("errors", errors);
-            }
+                { "EventValidation", [ex.Message] }
+            };
+            problemDetails.Extensions.TryAdd("errors", errors);
 
             await problemDetailsService.TryWriteAsync(new ProblemDetailsContext
             {

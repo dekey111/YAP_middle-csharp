@@ -80,7 +80,7 @@ namespace YAP_middle_csharp.Services
         /// </summary>
         /// <param name="id">Уникальный идентификатор события</param>
         /// <returns>Возвращает экземпляр EventModel в случае нахождения в противном случае null </returns>
-        public async Task<EventModel?> FindById(int id)
+        public async Task<EventModel?> FindById(Guid id)
         {
             _logger.LogDebug("Попытка найти Event с ID ={i}", id);
             
@@ -98,7 +98,7 @@ namespace YAP_middle_csharp.Services
         /// <param name="entity">Принимает модель события</param>
         /// <returns>Возвращает уникальный идентификатор нового события</returns>
         /// <exception cref="ArgumentNullException">Выбрасывается, в случае если передана пустая модель</exception>
-        public async Task<int> Create(EventModel entity)
+        public async Task<Guid> Create(EventModel entity)
         {
             _logger.LogDebug("Попытка Create Event. entity = {@entity} ", entity);
 

@@ -30,7 +30,7 @@ namespace YAP_middle_csharp.Tests
         {
             var newEvent = new EventModel { Title = "Хакатон", StartAt = DateTime.Now, EndAt = DateTime.Now.AddMonths(1) };
             var id = await _eventService.Create(newEvent);
-            Assert.True(id > 0);
+            Assert.NotEqual(Guid.Empty, id);
         }
 
         [Fact]
@@ -164,15 +164,22 @@ namespace YAP_middle_csharp.Tests
         [Fact]
         public async Task FailedFindById_ShouldReturnNull_ForNonExistentId()
         {
-            var result = await _eventService.FindById(999);
+            var nonExistentId = Guid.NewGuid();
+            var result = await _eventService.FindById(nonExistentId);
             Assert.Null(result);
         }
 
         [Fact]
         public async Task FailedUpdate_ShouldThrowKeyNotFound_ForNonExistentId()
         {
-            var ev = new EventModel { Id = 999, Title = "меня не существует", StartAt = DateTime.Now, EndAt = DateTime.Now };
-            await Assert.ThrowsAsync<KeyNotFoundException>(() => _eventService.Update(ev));
+            var newEvent = new EventModel 
+            { 
+                Id = Guid.NewGuid(),
+                Title = "меня не существует",
+                StartAt = DateTime.Now,
+                EndAt = DateTime.Now 
+            };
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _eventService.Update(newEvent));
         }
 
         [Fact]

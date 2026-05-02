@@ -12,14 +12,14 @@ namespace YAP_middle_csharp.Repository
             return Task.FromResult(_eventList.AsReadOnly() as IEnumerable<EventModel>);
         }
 
-        public Task<EventModel?> FindById(int id)
+        public Task<EventModel?> FindById(Guid id)
         {
             return Task.FromResult(_eventList.FirstOrDefault(x => x.Id == id));
         }
 
         public Task Create(EventModel item)
         {
-            item.Id = _eventList.Any() ? _eventList.Max(x => x.Id) + 1 : 1;
+            item.Id = Guid.NewGuid();
             _eventList.Add(item);
             return Task.CompletedTask;
         }

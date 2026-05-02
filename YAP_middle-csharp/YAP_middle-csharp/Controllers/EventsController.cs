@@ -49,10 +49,10 @@ namespace YAP_middle_csharp.Controllers
         /// </summary>
         /// <param name="id">Принимает существующий id из списка событий</param>
         /// <returns>Возвращает статус 200 и найденный элемент, либо 404 с комментарием</returns>
-        [HttpGet("{id:int}")]
+        [HttpGet("{id:Guid}")]
         [ProducesResponseType(typeof(EventResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetEventById([FromRoute] int id)
+        public async Task<IActionResult> GetEventById([FromRoute] Guid id)
         {
             var findEvent = await _eventService.FindById(id);
             if (findEvent == null)
@@ -83,7 +83,7 @@ namespace YAP_middle_csharp.Controllers
             if (errors.Any())
                 throw new ValidationException(string.Join("; ", errors));
 
-            int newIdEvent = await _eventService.Create(eventModel);
+            var newIdEvent = await _eventService.Create(eventModel);
             var newEvent = new EventResponse(eventModel);
             return CreatedAtAction(nameof(GetEventById), new { id = newIdEvent }, newEvent);
         }
@@ -94,10 +94,10 @@ namespace YAP_middle_csharp.Controllers
         /// <param name="id">Принимает существующий id из списка событий из query</param>
         /// <param name="eventModel">Принимает новую модель события из body</param>
         /// <returns>Возвращает статус 200 OK c изменённым элементом, либо 400 с описанием ошибки</returns>
-        [HttpPut("{id:int}")]
+        [HttpPut("{Guid:int}")]
         [ProducesResponseType(typeof(EventResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> EditEvent([FromRoute] int id, [FromBody] EventResponse eventResponse)
+        public async Task<IActionResult> EditEvent([FromRoute] Guid id, [FromBody] EventResponse eventResponse)
         {
             if (id != eventResponse.Id)
                 throw new ArgumentException("Проблема в сущности и в запросе. \nПроверьте правильность данных!");
@@ -126,10 +126,10 @@ namespace YAP_middle_csharp.Controllers
         /// </summary>
         /// <param name="id">Принимает существующий id из списка событий из query</param>
         /// <returns>возвращает статус 204 в случае успеха, либо 400 с описанием ошибки</returns>
-        [HttpDelete("{id:int}")]
+        [HttpDelete("{Guid:int}")]
         [ProducesResponseType(typeof(EventResponse), StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> DeleteEvent([FromRoute] int id)
+        public async Task<IActionResult> DeleteEvent([FromRoute] Guid id)
         {
             var findEvent = await _eventService.FindById(id);
 

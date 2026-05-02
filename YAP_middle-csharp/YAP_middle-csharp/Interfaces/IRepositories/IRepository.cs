@@ -17,7 +17,7 @@
         /// </summary>
         /// <param name="id">Уникальный идентификатор</param>
         /// <returns>Возвращает найденный тип из хранилища</returns>
-        Task<T?> FindById(int id);
+        Task<T?> FindById(Guid id);
 
         /// <summary>
         /// Сохранение новой сущности в хранилище
