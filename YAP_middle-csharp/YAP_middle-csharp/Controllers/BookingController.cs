@@ -33,7 +33,7 @@ namespace YAP_middle_csharp.Controllers
         {
             _logger.LogInformation("[BookingController] Запрос на бронирование события {EventId}", eventId);
             var newBooking = await _bookingService.CreateBookingAsync(eventId);
-            return Accepted($"/bookings/{newBooking.Id}", newBooking);
+            return AcceptedAtAction(nameof(GetBooking), new { id = newBooking.Id }, newBooking);
         }
 
         /// <summary>
