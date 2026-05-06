@@ -11,14 +11,10 @@ namespace YAP_middle_csharp.Controllers
     [Produces("application/json")]
     public class BookingController(
         IBookingServive bookingService,
-        IValidator<BookingModel> validator,
-        ILogger<BookingController> logger,
-        IEventService eventService) : ControllerBase
+        ILogger<BookingController> logger) : ControllerBase
     {
         private readonly IBookingServive _bookingService = bookingService;
-        private readonly IValidator<BookingModel> _validator = validator;
         private readonly ILogger<BookingController> _logger = logger;
-        private readonly IEventService _eventService = eventService;
 
         /// <summary>
         /// Создание нового бронирования на событие
