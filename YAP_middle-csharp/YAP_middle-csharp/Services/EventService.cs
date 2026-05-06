@@ -82,7 +82,7 @@ namespace YAP_middle_csharp.Services
         /// <returns>Возвращает экземпляр EventModel в случае нахождения в противном случае null </returns>
         public async Task<EventModel?> FindById(Guid id)
         {
-            _logger.LogDebug("Попытка найти Event с ID ={i}", id);
+            _logger.LogDebug("Попытка найти Event с ID = {id}", id);
             
             var findEvent = await _repository.FindById(id);
 
