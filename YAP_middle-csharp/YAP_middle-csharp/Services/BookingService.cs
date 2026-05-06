@@ -10,10 +10,13 @@ namespace YAP_middle_csharp.Services
     /// </summary>
     /// <param name="repository">Принимает репозиторий брони</param>
     /// <param name="logger">Принимает логгер</param>
-    public class BookingServive(IBooklngRepository repository, ILogger<BookingServive> logger) : IBookingServive
+    public class BookingService(IBooklngRepository repository,
+        ILogger<BookingService> logger,
+        IEventService eventService ) : IBookingServive
     {
-        private readonly ILogger<BookingServive> _logger = logger;
+        private readonly ILogger<BookingService> _logger = logger;
         private readonly IBooklngRepository _repository = repository;
+        private readonly IEventService _eventService = eventService;
 
 
         /// <summary>
@@ -99,9 +102,12 @@ namespace YAP_middle_csharp.Services
             _logger.LogDebug("Попытка найти Booking с ID = {id}", id);
 
             var findBooking = await _repository.FindById(id);
-
-            var comment = findBooking is null ? "Не получилось" : "Получилось";
-            _logger.LogInformation($"{comment} найти Booking с ID = {id}", id);
+            if (findBooking == null)
+            {
+                _logger.LogWarning("[BookingController] Бронь {BookingId} не найдена", id);
+                throw new KeyNotFoundException($"Бронь не найдена");
+            }
+            _logger.LogInformation($"Получилось найти Booking с ID = {id}", id);
 
             return findBooking;
         }
@@ -115,7 +121,6 @@ namespace YAP_middle_csharp.Services
         public async Task<Guid> Create(BookingModel entity)
         {
             _logger.LogDebug("Попытка Create Booking. entity = {@entity} ", entity);
-
             if (entity is null)
             {
                 _logger.LogError("Ошибка Booking. попытка передать null сущность");
@@ -131,6 +136,11 @@ namespace YAP_middle_csharp.Services
         public async Task<BookingModel> CreateBookingAsync(Guid eventId)
         {
             _logger.LogInformation("Попытка создать бронь для события {EventId}", eventId);
+            var findEvent = await _eventService.FindById(eventId);
+            if (findEvent == null)
+            {
+                throw new KeyNotFoundException("Событие не найдено");
+            }
 
             var newBooking = new BookingModel { EventId = eventId };
 

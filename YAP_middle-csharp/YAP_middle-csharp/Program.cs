@@ -19,7 +19,7 @@ builder.Services.AddSingleton<IRepository<EventModel>, EventRepository>();
 builder.Services.AddSingleton<IBooklngRepository, BookingRepository>(); 
 
 builder.Services.AddScoped<IEventService, EventService>();
-builder.Services.AddScoped<IBookingServive, BookingServive>();
+builder.Services.AddScoped<IBookingServive, BookingService>();
 builder.Services.AddTransient<IValidator<EventModel>, EventValidator>();
 builder.Services.AddTransient<IValidator<BookingModel>, BookingValidator>();
 builder.Services.AddEndpointsApiExplorer();
