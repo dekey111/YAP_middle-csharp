@@ -1,4 +1,6 @@
-﻿using YAP_middle_csharp.Interfaces.IRepositories;
+﻿using System.ComponentModel.DataAnnotations;
+using YAP_middle_csharp.Exceptions;
+using YAP_middle_csharp.Interfaces.IRepositories;
 using YAP_middle_csharp.Interfaces.IServices;
 using YAP_middle_csharp.Models;
 using YAP_middle_csharp.Repository;
@@ -10,12 +12,12 @@ namespace YAP_middle_csharp.Services
     /// </summary>
     /// <param name="repository">Принимает репозиторий брони</param>
     /// <param name="logger">Принимает логгер</param>
-    public class BookingService(IBooklngRepository repository,
+    public class BookingService(IBookingRepository repository,
         ILogger<BookingService> logger,
-        IEventService eventService ) : IBookingServive
+        IEventService eventService ) : IBookingService
     {
         private readonly ILogger<BookingService> _logger = logger;
-        private readonly IBooklngRepository _repository = repository;
+        private readonly IBookingRepository _repository = repository;
         private readonly IEventService _eventService = eventService;
 
 
@@ -37,23 +39,22 @@ namespace YAP_middle_csharp.Services
             int pageSize = 10)
 
         {
-            _logger.LogDebug("Начало выполнения FindAll: title={Title}, from={From}, to={To}, page ={Page}, pSize={pSize}",
+            _logger.LogDebug("[BookingService] [FindAll] Начало выполнения FindAll: title={Title}, from={From}, to={To}, page={Page}, pSize={pSize}",
                 title, from, to, page, pageSize);
 
             if (page < 1)
             {
-                _logger.LogWarning("Передан некорректный номер страницы: {Page}", page);
-                throw new ArgumentException("Номер страницы должен быть не менее 1");
+                _logger.LogWarning("[BookingService] [FindAll] Передан некорректный номер страницы: {Page}", page);
+                throw new ValidationExceptionApp("Номер страницы должен быть не менее 1");
             }
 
             if (pageSize < 1 || pageSize > 200)
             {
-                _logger.LogWarning("Передан некорректный размер страницы: {PageSize}", pageSize);
-                throw new ArgumentException("Размер страницы должен быть от 1 до 200");
+                _logger.LogWarning("[BookingService] [FindAll] Передан некорректный размер страницы: {PageSize}", pageSize);
+                throw new ValidationExceptionApp("Размер страницы должен быть от 1 до 200");
             }
 
-            var findAllBooking = await _repository.FindAll();
-            var query = findAllBooking.AsEnumerable();
+            var query = await _repository.StartQueryToFindAll();
 
             if (!string.IsNullOrEmpty(title))
             {
@@ -68,19 +69,19 @@ namespace YAP_middle_csharp.Services
             }
             if (to.HasValue && to is not null)
             {
-                query = query.Where(x => x.ProcessedAt is not null && x.ProcessedAt.Value.Date == to.Value.Date);
+                query = query.Where(x => x.ProcessedAt != null && x.ProcessedAt.Value.Date == to.Value.Date);
             }
             var totalCount = query.Count();
-            query = query.OrderByDescending(x => x.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize);
+            var resultQuery = query.OrderByDescending(x => x.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
             var result = new PaginatedResult<BookingModel>
             {
-                Items = query,
+                Items = resultQuery,
                 TotalCount = totalCount,
                 Page = page,
                 PageSize = pageSize
             };
-            _logger.LogInformation("Выполнен FindAll: title={Title}, from={From}, to={To}, page ={Page}, pSize={pSize}. Получилось: {TotalCount}",
+            _logger.LogInformation("[BookingService] [FindAll] Выполнен FindAll: title={Title}, from={From}, to={To}, page={Page}, pSize={pSize}. Получилось: {TotalCount}",
                 title, from, to, page, pageSize, result.Items.Count());
 
             return result;
@@ -88,7 +89,7 @@ namespace YAP_middle_csharp.Services
 
         public async Task<IEnumerable<BookingModel>> FindPendingBooking()
         {
-            _logger.LogInformation("Запрос на получения необрабоанных заявок");
+            _logger.LogInformation("[BookingService] [FindPendingBooking] Запрос на получения необработанных заявок");
             return await _repository.FindPendingBookings();
         }
 
@@ -99,15 +100,15 @@ namespace YAP_middle_csharp.Services
         /// <returns>Возвращает экземпляр BookingModel в случае нахождения в противном случае null </returns>
         public async Task<BookingModel?> FindById(Guid id)
         {
-            _logger.LogDebug("Попытка найти Booking с ID = {id}", id);
+            _logger.LogDebug("[BookingService] [FindById] Попытка найти Booking с ID = {id}", id);
 
             var findBooking = await _repository.FindById(id);
             if (findBooking == null)
             {
-                _logger.LogWarning("[BookingController] Бронь {BookingId} не найдена", id);
-                throw new KeyNotFoundException($"Бронь не найдена");
+                _logger.LogWarning("[BookingService] [FindById] Бронь {BookingId} не найдена", id);
+                throw new NotFoundExceptionApp($"Бронь не найдена");
             }
-            _logger.LogInformation($"Получилось найти Booking с ID = {id}", id);
+            _logger.LogInformation($"[BookingService] [FindById] Получилось найти Booking с ID = {id}", id);
 
             return findBooking;
         }
@@ -117,35 +118,42 @@ namespace YAP_middle_csharp.Services
         /// </summary>
         /// <param name="entity">Принимает модель брони</param>
         /// <returns>Возвращает уникальный идентификатор новой брони</returns>
-        /// <exception cref="ArgumentNullException">Выбрасывается, в случае если передана пустая модель</exception>
+        /// <exception cref="ValidationExceptionApp">Выбрасывается, в случае если передана пустая модель</exception>
         public async Task<Guid> Create(BookingModel entity)
         {
-            _logger.LogDebug("Попытка Create Booking. entity = {@entity} ", entity);
+            _logger.LogDebug("[BookingService] [Create] Попытка Create Booking. entity = {@entity} ", entity);
             if (entity is null)
             {
-                _logger.LogError("Ошибка Booking. попытка передать null сущность");
-                throw new ArgumentNullException(nameof(entity));
+                _logger.LogError("[BookingService] [Create] Ошибка Booking. попытка передать null сущность");
+                throw new ValidationExceptionApp(nameof(entity));
             }
 
             await _repository.Create(entity);
-            _logger.LogInformation("Создание нового Booking с Id: {Id} ", entity.Id);
+            _logger.LogInformation("[BookingService] [Create] Создание нового Booking с Id: {Id} ", entity.Id);
 
             return entity.Id;
         }
 
         public async Task<BookingModel> CreateBookingAsync(Guid eventId)
         {
-            _logger.LogInformation("Попытка создать бронь для события {EventId}", eventId);
+            _logger.LogInformation("[BookingService] [CreateBookingAsync] Попытка создать бронь для события {EventId}", eventId);
             var findEvent = await _eventService.FindById(eventId);
             if (findEvent == null)
             {
-                throw new KeyNotFoundException("Событие не найдено");
+                _logger.LogWarning("[BookingService] [CreateBookingAsync] Событие не найдено {EventId}", eventId);
+                throw new NotFoundExceptionApp("Событие не найдено");
+            }
+
+            if (DateTime.UtcNow >= findEvent.EndAt)
+            {
+                _logger.LogWarning("[BookingService] [CreateBookingAsync] Срок регистрации на событие истек {EventId}", eventId);
+                throw new ValidationExceptionApp("Срок регистрации на событие истек");
             }
 
             var newBooking = new BookingModel { EventId = eventId };
 
             await _repository.Create(newBooking);
-            _logger.LogInformation("Бронь создана: {Id}", newBooking.Id);
+            _logger.LogInformation("[BookingService] [CreateBookingAsync] Бронь создана: {Id}", newBooking.Id);
             return newBooking;
         }
 
@@ -154,28 +162,28 @@ namespace YAP_middle_csharp.Services
         /// </summary>
         /// <param name="entity">Принимает модель брони</param>
         /// <returns>Возвращает обновлённую модель брони</returns>
-        /// <exception cref="ArgumentNullException">Выбрасывается, в случае если модель пустая</exception>
-        /// <exception cref="KeyNotFoundException">Выбрасывается в случае, если такой брони по ID не найдено</exception>
+        /// <exception cref="ValidationExceptionApp">Выбрасывается, в случае если модель пустая</exception>
+        /// <exception cref="NotFoundExceptionApp">Выбрасывается в случае, если такой брони по ID не найдено</exception>
         public async Task<BookingModel> Update(BookingModel entity)
         {
             if (entity is null)
             {
-                _logger.LogError("Ошибка Update. попытка передать null сущность");
-                throw new ArgumentNullException(nameof(entity));
+                _logger.LogError("[BookingService] [Update] Ошибка Update. попытка передать null сущность");
+                throw new ValidationExceptionApp(nameof(entity));
             }
 
             var findBooking = await _repository.FindById(entity.Id);
             if (findBooking is null)
             {
-                _logger.LogError("Ошибка Update. Booking с ID: {id}, не найдено!", entity.Id);
-                throw new KeyNotFoundException("Event не найден!");
+                _logger.LogError("[BookingService] [Update] Ошибка Update. Booking с ID: {id}, не найдено!", entity.Id);
+                throw new NotFoundExceptionApp("Event не найден!");
             }
 
-            _logger.LogDebug("Попытка обновления Booking. entity = {@entity} ", findBooking);
+            _logger.LogDebug("[BookingService] [Update] Попытка обновления Booking. entity = {@entity} ", findBooking);
 
             await _repository.Update(entity);
 
-            _logger.LogInformation("Booking обновлён. Новые данные: entity = {@entity} ", entity);
+            _logger.LogInformation("[BookingService] [Update] Booking обновлён. Новые данные: entity = {@entity} ", entity);
 
             return entity;
         }
@@ -185,28 +193,28 @@ namespace YAP_middle_csharp.Services
         /// </summary>
         /// <param name="entity">Принимает модель для удаления</param>
         /// <returns>Ничего не возвращается</returns>
-        /// <exception cref="ArgumentNullException">Выбрасывается, в случае если модель пустая</exception>
-        /// <exception cref="KeyNotFoundException">Выбрасывается в случае, если тако по ID не найдено</exception>
+        /// <exception cref="ValidationExceptionApp">Выбрасывается, в случае если модель пустая</exception>
+        /// <exception cref="NotFoundExceptionApp">Выбрасывается в случае, если тако по ID не найдено</exception>
         public async Task Delete(BookingModel entity)
         {
             if (entity is null)
             {
-                _logger.LogError("Ошибка Delete. попытка передать null сущность");
-                throw new ArgumentNullException(nameof(entity));
+                _logger.LogError("[BookingService] [Delete] Ошибка Delete. попытка передать null сущность");
+                throw new ValidationExceptionApp(nameof(entity));
             }
 
             var findBooking = await _repository.FindById(entity.Id);
             if (findBooking is null)
             {
-                _logger.LogWarning("Ошибка Delete. Booking с ID {Id} не найдено", entity.Id);
-                throw new KeyNotFoundException("Event не найден!");
+                _logger.LogWarning("[BookingService] [Delete] Ошибка Delete. Booking с ID {Id} не найдено", entity.Id);
+                throw new NotFoundExceptionApp("Event не найден!");
             }
 
-            _logger.LogDebug("Попытка Delete Booking. entity = {@entity} ", findBooking);
+            _logger.LogDebug("[BookingService] [Delete] Попытка Delete Booking. entity = {@entity} ", findBooking);
 
             await _repository.Delete(findBooking);
 
-            _logger.LogInformation("Booking удалён: id={Id}", findBooking.Id);
+            _logger.LogInformation("[BookingService] [Delete] Booking удалён: id={Id}", findBooking.Id);
         }
     }
 }

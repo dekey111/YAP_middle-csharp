@@ -15,11 +15,11 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddHostedService<BackgroundBookingService>();
 
-builder.Services.AddSingleton<IRepository<EventModel>, EventRepository>();
-builder.Services.AddSingleton<IBooklngRepository, BookingRepository>(); 
+builder.Services.AddSingleton<IEventRepository, EventRepository>();
+builder.Services.AddSingleton<IBookingRepository, BookingRepository>(); 
 
 builder.Services.AddScoped<IEventService, EventService>();
-builder.Services.AddScoped<IBookingServive, BookingService>();
+builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddTransient<IValidator<EventModel>, EventValidator>();
 builder.Services.AddTransient<IValidator<BookingModel>, BookingValidator>();
 builder.Services.AddEndpointsApiExplorer();

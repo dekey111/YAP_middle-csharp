@@ -3,13 +3,17 @@ using YAP_middle_csharp.Models;
 
 namespace YAP_middle_csharp.Repository
 {
-    public class EventRepository : IRepository<EventModel>
+    public class EventRepository : IEventRepository
     {
         private readonly List<EventModel> _eventList = new();
 
-        public Task<IEnumerable<EventModel>> FindAll()
+        //public Task<IEnumerable<EventModel>> FindAll()
+        //{
+        //    return Task.FromResult(_eventList.AsReadOnly() as IEnumerable<EventModel>);
+        //}
+        public Task<IQueryable<EventModel>> StartQueryToFindAll()
         {
-            return Task.FromResult(_eventList.AsReadOnly() as IEnumerable<EventModel>);
+            return Task.FromResult(_eventList.AsQueryable());
         }
 
         public Task<EventModel?> FindById(Guid id)

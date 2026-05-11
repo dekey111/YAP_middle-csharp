@@ -21,9 +21,6 @@ namespace YAP_middle_csharp.Validator
             if (item.EventId == Guid.Empty)
                 yield return "Идентификатор события (EventId) должен быть указан!";
 
-            if (item.EventId == Guid.Empty)
-                yield return "Идентификатор события (EventId) должен быть указан!";
-
             if (item.CreatedAt == default)
                 yield return "Поле 'Дата создания' не может быть пустым!";
 

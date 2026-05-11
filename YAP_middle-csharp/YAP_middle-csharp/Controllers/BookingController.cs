@@ -10,10 +10,10 @@ namespace YAP_middle_csharp.Controllers
     [Route("api/[controller]")]
     [Produces("application/json")]
     public class BookingController(
-        IBookingServive bookingService,
+        IBookingService bookingService,
         ILogger<BookingController> logger) : ControllerBase
     {
-        private readonly IBookingServive _bookingService = bookingService;
+        private readonly IBookingService _bookingService = bookingService;
         private readonly ILogger<BookingController> _logger = logger;
 
         /// <summary>

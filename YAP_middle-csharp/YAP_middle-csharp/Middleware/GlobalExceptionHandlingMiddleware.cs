@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
-using System.Net.NetworkInformation;
+using YAP_middle_csharp.Exceptions;
 
 namespace YAP_middle_csharp.Middleware
 {
@@ -41,8 +41,12 @@ namespace YAP_middle_csharp.Middleware
                 return;
             }
 
-            var statusCode = MapStatusCode(ex);
-            var title = MapTitleByStatusCode(statusCode);
+            var (statusCode, title) = ex switch
+            {
+                BaseApiException domainEx => (domainEx.StatusCode, domainEx.Title),
+                _ => (StatusCodes.Status500InternalServerError, "Internal Server Error")
+            };
+
             var type = statusCode == StatusCodes.Status400BadRequest ? "https://tools.ietf.org/html/rfc9110#section-15.5.1" : ex.GetType().Name;
 
             httpContext.Response.StatusCode = statusCode;
@@ -52,10 +56,11 @@ namespace YAP_middle_csharp.Middleware
             {
                 Status = statusCode,
                 Title = title,
+                Detail = ex.Message,
                 Type = type,
-                Detail = ex.Message
+                Instance = httpContext.Request.Path
             };
-            
+
             var errors = new Dictionary<string, string[]>
             {
                 { "EventValidation", [ex.Message] }
@@ -69,21 +74,5 @@ namespace YAP_middle_csharp.Middleware
                 ProblemDetails = problemDetails
             });
         }
-
-        private static int MapStatusCode(Exception ex)
-            => ex switch
-            {
-                ArgumentException or ValidationException => StatusCodes.Status400BadRequest,
-                KeyNotFoundException => StatusCodes.Status404NotFound,
-                _ => StatusCodes.Status500InternalServerError
-            };
-
-        private static string MapTitleByStatusCode(int statusCode)
-            => statusCode switch
-            {
-                400 => "One or more validation errors occurred",
-                404 => "The specified resource was not found",
-                _ => "Internal Server Error"
-            };
     }
 }

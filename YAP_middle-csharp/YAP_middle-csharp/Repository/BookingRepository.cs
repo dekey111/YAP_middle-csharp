@@ -3,13 +3,18 @@ using YAP_middle_csharp.Models;
 
 namespace YAP_middle_csharp.Repository
 {
-    public class BookingRepository : IBooklngRepository
+    public class BookingRepository : IBookingRepository
     {
         private readonly List<BookingModel> _bookList = new();
 
-        public Task<IEnumerable<BookingModel>> FindAll()
+        //public Task<IEnumerable<BookingModel>> FindAll()
+        //{
+        //    return Task.FromResult(_bookList.AsReadOnly() as IEnumerable<BookingModel>);
+        //}
+
+        public Task<IQueryable<BookingModel>> StartQueryToFindAll()
         {
-            return Task.FromResult(_bookList.AsReadOnly() as IEnumerable<BookingModel>);
+            return Task.FromResult(_bookList.AsQueryable());
         }
         public Task<IEnumerable<BookingModel>> FindPendingBookings()
         {
@@ -41,5 +46,7 @@ namespace YAP_middle_csharp.Repository
             _bookList.Remove(entity);
             return Task.CompletedTask;
         }
+
+
     }
 }

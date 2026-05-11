@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using YAP_middle_csharp.Exceptions;
 using YAP_middle_csharp.Interfaces;
 using YAP_middle_csharp.Interfaces.IServices;
 using YAP_middle_csharp.Models;
@@ -81,7 +82,7 @@ namespace YAP_middle_csharp.Controllers
             
             var errors = _validator.GetErrors(eventModel).ToList();
             if (errors.Any())
-                throw new ValidationException(string.Join("; ", errors));
+                throw new ValidationExceptionApp(string.Join("; ", errors));
 
             var newIdEvent = await _eventService.Create(eventModel);
             var newEvent = new EventResponse(eventModel);
@@ -100,7 +101,7 @@ namespace YAP_middle_csharp.Controllers
         public async Task<IActionResult> EditEvent([FromRoute] Guid id, [FromBody] EventResponse eventResponse)
         {
             if (id != eventResponse.Id)
-                throw new ArgumentException("Проблема в сущности и в запросе. \nПроверьте правильность данных!");
+                throw new ValidationExceptionApp("Проблема в сущности и в запросе. \nПроверьте правильность данных!");
 
             var eventModel = new EventModel()
             {
@@ -113,7 +114,7 @@ namespace YAP_middle_csharp.Controllers
 
             var errors = _validator.GetErrors(eventModel).ToList();
             if (errors.Any())
-                throw new ValidationException(string.Join("; ", errors));
+                throw new ValidationExceptionApp(string.Join("; ", errors));
 
             var updatedEvent = await _eventService.Update(eventModel);
 
@@ -134,7 +135,7 @@ namespace YAP_middle_csharp.Controllers
             var findEvent = await _eventService.FindById(id);
 
             if (findEvent == null)
-                throw new KeyNotFoundException($"Event c id: {id} не найден!");
+                throw new NotFoundExceptionApp($"Event c id: {id} не найден!");
 
             await _eventService.Delete(findEvent);
             return NoContent();

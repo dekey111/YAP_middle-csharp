@@ -2,7 +2,7 @@
 
 namespace YAP_middle_csharp.Interfaces.IServices
 {
-    public interface IBookingServive : IQueryService<BookingModel>, ICommandService<BookingModel>
+    public interface IBookingService : IQueryService<BookingModel>, ICommandService<BookingModel>
     {
         Task<IEnumerable<BookingModel>> FindPendingBooking();
 

@@ -1,14 +1,12 @@
-﻿using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
-using YAP_middle_csharp.Interfaces.IRepositories;
+﻿using YAP_middle_csharp.Interfaces.IRepositories;
 using YAP_middle_csharp.Models;
-using YAP_middle_csharp.Repository;
 
 namespace YAP_middle_csharp.Services.BackgroundServices
 {
     /// <summary>
     /// Фоновый метод для обработки поступающих заказов
     /// </summary>
-    /// <param name="serviceProvider">Принимает провайдер, чтобы найти bookingrepository</param>
+    /// <param name="serviceProvider">Принимает провайдер, чтобы найти BookingRepository</param>
     /// <param name="logger">Принимает логгер</param>
     public class BackgroundBookingService(
         IServiceProvider serviceProvider,
@@ -27,7 +25,7 @@ namespace YAP_middle_csharp.Services.BackgroundServices
                 {
                     using (var scope = _serviceProvider.CreateScope())
                     {
-                        var repository = scope.ServiceProvider.GetRequiredService<IBooklngRepository>();
+                        var repository = scope.ServiceProvider.GetRequiredService<IBookingRepository>();
                         var pendingBook = (await repository.FindPendingBookings()).ToList();
 
                         foreach (var book in pendingBook)
@@ -37,9 +35,9 @@ namespace YAP_middle_csharp.Services.BackgroundServices
                             await Task.Delay(2000);
 
                             book.Status = BookingStatusEnum.Confirmed;
-                            book.ProcessedAt = DateTime.Now;
+                            book.ProcessedAt = DateTime.UtcNow;
                             await repository.Update(book);
-                            _logger.LogInformation("[BackgroundBookingService] жестоко обработали ID: {idBook}", book.Id);
+                            _logger.LogInformation("[BackgroundBookingService] Обработали ID: {idBook}", book.Id);
 
                         }
                     }

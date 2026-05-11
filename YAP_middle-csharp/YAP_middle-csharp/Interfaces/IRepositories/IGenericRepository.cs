@@ -4,13 +4,16 @@
     /// Универсальный интерфейс репозитория для работы с хранилищем данных.
     /// </summary>
     /// <typeparam name="T">Тип хранилища.</typeparam>
-    public interface IRepository<T> where T : class
+    public interface IGenericRepository<T> where T : class
     {
         /// <summary>
-        /// Получение всех записей из хранилища
+        /// Подготовленный запрос для получения сущности 
         /// </summary>
-        /// <returns>Возвращает все найденные сущности из хранилища</returns>
-        Task<IEnumerable<T>> FindAll();
+        /// <remarks>
+        /// Метод, который возвращает голый запрос для обработки на стороне БД, с возможностью подкрутить необходимые фильтрации
+        /// </remarks>
+        /// <returns>Возвращает подготовленный шаблон получения данных</returns>
+        Task<IQueryable<T>> StartQueryToFindAll();
 
         /// <summary>
         /// Поиск записи по идентификатору

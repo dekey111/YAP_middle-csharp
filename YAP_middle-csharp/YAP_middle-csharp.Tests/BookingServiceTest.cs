@@ -47,8 +47,8 @@ namespace YAP_middle_csharp.Tests
             var newEvent = new EventModel 
             { 
                 Title = "Какой то суперский Ивент",
-                StartAt = DateTime.Now,
-                EndAt = DateTime.Now.AddMonths(1) 
+                StartAt = DateTime.UtcNow,
+                EndAt = DateTime.UtcNow.AddMonths(1) 
             };
             var id = await _eventService.Create(newEvent);
             var booking = await _bookingService.CreateBookingAsync(id);
@@ -69,8 +69,8 @@ namespace YAP_middle_csharp.Tests
             var newEvent = new EventModel
             {
                 Title = "Какой то суперский Ивент",
-                StartAt = DateTime.Now,
-                EndAt = DateTime.Now.AddMonths(1)
+                StartAt = DateTime.UtcNow,
+                EndAt = DateTime.UtcNow.AddMonths(1)
             };
             var id = await _eventService.Create(newEvent);
             var booking1 = await _bookingService.CreateBookingAsync(id);
@@ -96,8 +96,8 @@ namespace YAP_middle_csharp.Tests
             var newEvent = new EventModel
             {
                 Title = "Какой то суперский Ивент",
-                StartAt = DateTime.Now,
-                EndAt = DateTime.Now.AddMonths(1)
+                StartAt = DateTime.UtcNow,
+                EndAt = DateTime.UtcNow.AddMonths(1)
             };
             var id = await _eventService.Create(newEvent);
             var newBooking = await _bookingService.CreateBookingAsync(id);
@@ -130,8 +130,8 @@ namespace YAP_middle_csharp.Tests
             var newEvent = new EventModel
             {
                 Title = "Тестовое событие",
-                StartAt = DateTime.Now,
-                EndAt = DateTime.Now.AddDays(1)
+                StartAt = DateTime.UtcNow,
+                EndAt = DateTime.UtcNow.AddDays(1)
             };
             var eventId = await eventService.Create(newEvent);
 
@@ -144,7 +144,7 @@ namespace YAP_middle_csharp.Tests
             serviceProviderMock.Setup(s => s.GetService(typeof(IServiceScopeFactory))).Returns(scopeFactoryMock.Object);
             scopeFactoryMock.Setup(f => f.CreateScope()).Returns(scopeMock.Object);
 
-            scopeMock.Setup(s => s.ServiceProvider.GetService(typeof(IBooklngRepository))).Returns(bookingRepository);
+            scopeMock.Setup(s => s.ServiceProvider.GetService(typeof(IBookingRepository))).Returns(bookingRepository);
 
             var bgService = new BackgroundBookingService(serviceProviderMock.Object, new NullLogger<BackgroundBookingService>());
 
@@ -186,8 +186,8 @@ namespace YAP_middle_csharp.Tests
             var newEvent = new EventModel
             {
                 Title = "Какой то суперский Ивент",
-                StartAt = DateTime.Now,
-                EndAt = DateTime.Now.AddMonths(1)
+                StartAt = DateTime.UtcNow,
+                EndAt = DateTime.UtcNow.AddMonths(1)
             };
             var eventId = await _eventService.Create(newEvent);
             await _eventService.Delete(newEvent);
