@@ -87,6 +87,10 @@ namespace YAP_middle_csharp.Services
             return result;
         }
 
+        /// <summary>
+        /// Метод для получения всех необработанных заявок 
+        /// </summary>
+        /// <returns></returns>
         public async Task<IEnumerable<BookingModel>> FindPendingBooking()
         {
             _logger.LogInformation("[BookingService] [FindPendingBooking] Запрос на получения необработанных заявок");
@@ -134,6 +138,13 @@ namespace YAP_middle_csharp.Services
             return entity.Id;
         }
 
+        /// <summary>
+        /// Метод для создания новой брони для события
+        /// </summary>
+        /// <param name="eventId">Получает УИ События</param>
+        /// <returns>Возвращает экземпляр созданного события</returns>
+        /// <exception cref="NotFoundExceptionApp">В случае если не найден Event</exception>
+        /// <exception cref="ValidationExceptionApp">В случае ошибки валидации</exception>
         public async Task<BookingModel> CreateBookingAsync(Guid eventId)
         {
             _logger.LogInformation("[BookingService] [CreateBookingAsync] Попытка создать бронь для события {EventId}", eventId);

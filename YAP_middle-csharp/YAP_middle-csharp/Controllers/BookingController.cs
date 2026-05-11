@@ -17,27 +17,11 @@ namespace YAP_middle_csharp.Controllers
         private readonly ILogger<BookingController> _logger = logger;
 
         /// <summary>
-        /// Создание нового бронирования на событие
-        /// </summary>
-        /// <param name="eventId">Принимает уникальный идентификатор события</param>
-        /// <returns>Возвращает новую бронь</returns>
-        /// <exception cref="KeyNotFoundException"></exception>
-        [HttpPost("/events/{eventId:guid}/book")]
-        [ProducesResponseType(typeof(BookingModel), StatusCodes.Status202Accepted)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> AddBooking(Guid eventId)
-        {
-            _logger.LogInformation("[BookingController] Запрос на бронирование события {EventId}", eventId);
-            var newBooking = await _bookingService.CreateBookingAsync(eventId);
-            return AcceptedAtAction(nameof(GetBooking), new { id = newBooking.Id }, newBooking);
-        }
-
-        /// <summary>
         /// Метод получения брони
         /// </summary>
         /// <param name="id">Принимает Уникальный идентификатор брони</param>
         /// <returns>Возвращает бронь</returns>
-        /// <exception cref="KeyNotFoundException"></exception>
+        /// <exception cref="NotFoundExceptionApp"></exception>
         [HttpGet("/bookings/{id:guid}")]
         [ProducesResponseType(typeof(BookingModel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
