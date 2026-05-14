@@ -13,7 +13,7 @@ namespace YAP_middle_csharp.Interfaces.IServices
         /// </summary>
         /// <param name="entity">Объект сущности для сохранения</param>
         /// <returns>Возвращает идентификатор созданной записи</returns>
-        Task<int> Create(T entity);
+        Task<Guid> Create(T entity);
 
         /// <summary>
         /// Обновление данных существующей записи

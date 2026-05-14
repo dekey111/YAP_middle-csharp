@@ -28,9 +28,9 @@ namespace YAP_middle_csharp.Tests
         [Fact]
         public async Task Create_ReturnNewId()
         {
-            var newEvent = new EventModel { Title = "Хакатон", StartAt = DateTime.Now, EndAt = DateTime.Now.AddMonths(1) };
+            var newEvent = new EventModel { Title = "Хакатон", StartAt = DateTime.UtcNow, EndAt = DateTime.UtcNow.AddMonths(1) };
             var id = await _eventService.Create(newEvent);
-            Assert.True(id > 0);
+            Assert.NotEqual(Guid.Empty, id);
         }
 
         [Fact]
@@ -43,7 +43,7 @@ namespace YAP_middle_csharp.Tests
         [Fact]
         public async Task FindEventById_ReturnExist()
         {
-            var newEvent = new EventModel { Title = "Рок концерт", StartAt = DateTime.Now.AddMonths(2), EndAt = DateTime.Now.AddMonths(3) };
+            var newEvent = new EventModel { Title = "Рок концерт", StartAt = DateTime.UtcNow.AddMonths(2), EndAt = DateTime.UtcNow.AddMonths(3) };
             var id = await _eventService.Create(newEvent);
             var findEvent = await _eventService.FindById(id);
 
@@ -57,8 +57,8 @@ namespace YAP_middle_csharp.Tests
             var newEvent = new EventModel
             {
                 Title = "Курсы не по C#",
-                StartAt = DateTime.Now,
-                EndAt = DateTime.Now.AddDays(1)
+                StartAt = DateTime.UtcNow,
+                EndAt = DateTime.UtcNow.AddDays(1)
             };
             var id = await _eventService.Create(newEvent);
 
@@ -66,8 +66,8 @@ namespace YAP_middle_csharp.Tests
             {
                 Id = id,
                 Title = "Курсы C#",
-                StartAt = DateTime.Now,
-                EndAt = DateTime.Now.AddDays(1)
+                StartAt = DateTime.UtcNow,
+                EndAt = DateTime.UtcNow.AddDays(1)
             };
 
             await _eventService.Update(eventToUpdate);
@@ -83,8 +83,8 @@ namespace YAP_middle_csharp.Tests
             var newEvent = new EventModel
             {
                 Title = "УДАЛИИИТЬ!!!",
-                StartAt = DateTime.Now,
-                EndAt = DateTime.Now
+                StartAt = DateTime.UtcNow,
+                EndAt = DateTime.UtcNow
             };
 
             var id = await _eventService.Create(newEvent);
@@ -101,8 +101,8 @@ namespace YAP_middle_csharp.Tests
             var newEvent = new EventModel
             {
                 Title = "Курсы по C#",
-                StartAt = DateTime.Now,
-                EndAt = DateTime.Now.AddDays(1)
+                StartAt = DateTime.UtcNow,
+                EndAt = DateTime.UtcNow.AddDays(1)
             };
             await _eventService.Create(newEvent);
 
@@ -140,7 +140,7 @@ namespace YAP_middle_csharp.Tests
         public async Task Pagination_ReturnCorrectPage()
         {
             for (int i = 1; i <= 15; i++)
-                await _eventService.Create(new EventModel { Title = $"Я мистер мисикс: {i}, посмотрите на меня!", StartAt = DateTime.Now, EndAt = DateTime.Now });
+                await _eventService.Create(new EventModel { Title = $"Я мистер мисикс: {i}, посмотрите на меня!", StartAt = DateTime.UtcNow, EndAt = DateTime.UtcNow });
 
             var result = await _eventService.FindAll(page: 2, pageSize: 10);
             Assert.Equal(5, result.Items.Count());
@@ -164,15 +164,22 @@ namespace YAP_middle_csharp.Tests
         [Fact]
         public async Task FailedFindById_ShouldReturnNull_ForNonExistentId()
         {
-            var result = await _eventService.FindById(999);
+            var nonExistentId = Guid.NewGuid();
+            var result = await _eventService.FindById(nonExistentId);
             Assert.Null(result);
         }
 
         [Fact]
         public async Task FailedUpdate_ShouldThrowKeyNotFound_ForNonExistentId()
         {
-            var ev = new EventModel { Id = 999, Title = "меня не существует", StartAt = DateTime.Now, EndAt = DateTime.Now };
-            await Assert.ThrowsAsync<KeyNotFoundException>(() => _eventService.Update(ev));
+            var newEvent = new EventModel 
+            { 
+                Id = Guid.NewGuid(),
+                Title = "меня не существует",
+                StartAt = DateTime.UtcNow,
+                EndAt = DateTime.UtcNow 
+            };
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _eventService.Update(newEvent));
         }
 
         [Fact]
@@ -187,8 +194,8 @@ namespace YAP_middle_csharp.Tests
             var invalid = new EventModel()
             {
                 Title = "Инвалид",
-                StartAt = DateTime.Now.AddDays(10),
-                EndAt = DateTime.Now
+                StartAt = DateTime.UtcNow.AddDays(10),
+                EndAt = DateTime.UtcNow
             };
 
             var errors = _validator.GetErrors(invalid).ToList();
