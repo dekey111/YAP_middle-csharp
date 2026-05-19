@@ -91,6 +91,8 @@ namespace YAP_middle_csharp.Controllers
             {
                 Title = eventRequest.Title,
                 Description = eventRequest.Description,
+                TotalSeats = eventRequest.TotalSeats ?? 0,
+                AvailableSeats = eventRequest.TotalSeats ?? 0,
                 StartAt = eventRequest.StartAt,
                 EndAt = eventRequest.EndAt
             };
@@ -129,7 +131,7 @@ namespace YAP_middle_csharp.Controllers
         /// <param name="id">Принимает существующий id из списка событий из query</param>
         /// <param name="eventModel">Принимает новую модель события из body</param>
         /// <returns>Возвращает статус 200 OK c изменённым элементом, либо 400 с описанием ошибки</returns>
-        [HttpPut("{Guid:int}")]
+        [HttpPut("{id:Guid}")]
         [ProducesResponseType(typeof(EventResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> EditEvent([FromRoute] Guid id, [FromBody] EventResponse eventResponse)
@@ -147,6 +149,8 @@ namespace YAP_middle_csharp.Controllers
                 Id = eventResponse.Id,
                 Title = eventResponse.Title,
                 Description = eventResponse.Description,
+                TotalSeats = eventResponse.TotalSeats,
+                AvailableSeats = eventResponse.AvailableSeats,
                 StartAt = eventResponse.StartAt,
                 EndAt = eventResponse.EndAt
             };
@@ -169,7 +173,7 @@ namespace YAP_middle_csharp.Controllers
         /// </summary>
         /// <param name="id">Принимает существующий id из списка событий из query</param>
         /// <returns>возвращает статус 204 в случае успеха, либо 400 с описанием ошибки</returns>
-        [HttpDelete("{Guid:int}")]
+        [HttpDelete("{id:Guid}")]
         [ProducesResponseType(typeof(EventResponse), StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteEvent([FromRoute] Guid id)

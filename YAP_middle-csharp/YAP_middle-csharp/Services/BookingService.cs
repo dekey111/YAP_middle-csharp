@@ -19,6 +19,7 @@ namespace YAP_middle_csharp.Services
         private readonly ILogger<BookingService> _logger = logger;
         private readonly IBookingRepository _repository = repository;
         private readonly IEventService _eventService = eventService;
+        private readonly object _bookingLock = new(); 
 
 
         /// <summary>
@@ -145,27 +146,38 @@ namespace YAP_middle_csharp.Services
         /// <returns>Возвращает экземпляр созданного события</returns>
         /// <exception cref="NotFoundExceptionApp">В случае если не найден Event</exception>
         /// <exception cref="ValidationExceptionApp">В случае ошибки валидации</exception>
+        /// <exception cref="NoAvailableSeatsExceptionApp">В случае если мест не хватает</exception>
         public async Task<BookingModel> CreateBookingAsync(Guid eventId)
         {
             _logger.LogInformation("[BookingService] [CreateBookingAsync] Попытка создать бронь для события {EventId}", eventId);
-            var findEvent = await _eventService.FindById(eventId);
-            if (findEvent == null)
+
+            lock (_bookingLock)
             {
-                _logger.LogWarning("[BookingService] [CreateBookingAsync] Событие не найдено {EventId}", eventId);
-                throw new NotFoundExceptionApp("Событие не найдено");
+                var findEvent = _eventService.FindById(eventId).GetAwaiter().GetResult();
+                if (findEvent == null)
+                {
+                    _logger.LogWarning("[BookingService] [CreateBookingAsync] Событие не найдено {EventId}", eventId);
+                    throw new NotFoundExceptionApp("Событие не найдено");
+                }
+
+                if (DateTime.UtcNow >= findEvent.EndAt)
+                {
+                    _logger.LogWarning("[BookingService] [CreateBookingAsync] Срок регистрации на событие истек {EventId}", eventId);
+                    throw new ValidationExceptionApp("Срок регистрации на событие истек");
+                }
+                bool hasSeat = findEvent.TryReserveSeats(1).Result; 
+                if (!hasSeat)
+                {
+                    _logger.LogWarning("[BookingService] [CreateBookingAsync] Недостаточно мест на событие {EventId}", eventId);
+                    throw new NoAvailableSeatsExceptionApp("Недостаточно мест на событие");
+                }
+
+                var newBooking = new BookingModel { EventId = eventId };
+                _repository.Create(newBooking).GetAwaiter().GetResult();
+                _logger.LogInformation("[BookingService] [CreateBookingAsync] Бронь создана: {Id}", newBooking.Id);
+                return newBooking;
             }
 
-            if (DateTime.UtcNow >= findEvent.EndAt)
-            {
-                _logger.LogWarning("[BookingService] [CreateBookingAsync] Срок регистрации на событие истек {EventId}", eventId);
-                throw new ValidationExceptionApp("Срок регистрации на событие истек");
-            }
-
-            var newBooking = new BookingModel { EventId = eventId };
-
-            await _repository.Create(newBooking);
-            _logger.LogInformation("[BookingService] [CreateBookingAsync] Бронь создана: {Id}", newBooking.Id);
-            return newBooking;
         }
 
         /// <summary>
