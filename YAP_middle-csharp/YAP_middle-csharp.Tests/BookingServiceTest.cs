@@ -44,8 +44,9 @@ namespace YAP_middle_csharp.Tests
         [Fact]
         public async Task Create_ReturnNewBooking()
         {
-            var newEvent = new EventModel 
-            { 
+            var newEvent = new EventModel
+            {
+                TotalSeats = 2,
                 Title = "Какой то суперский Ивент",
                 StartAt = DateTime.UtcNow,
                 EndAt = DateTime.UtcNow.AddMonths(1) 
@@ -68,6 +69,7 @@ namespace YAP_middle_csharp.Tests
         {
             var newEvent = new EventModel
             {
+                TotalSeats = 2,
                 Title = "Какой то суперский Ивент",
                 StartAt = DateTime.UtcNow,
                 EndAt = DateTime.UtcNow.AddMonths(1)
@@ -95,6 +97,7 @@ namespace YAP_middle_csharp.Tests
         {
             var newEvent = new EventModel
             {
+                TotalSeats = 2,
                 Title = "Какой то суперский Ивент",
                 StartAt = DateTime.UtcNow,
                 EndAt = DateTime.UtcNow.AddMonths(1)
@@ -130,6 +133,7 @@ namespace YAP_middle_csharp.Tests
             var newEvent = new EventModel
             {
                 Title = "Тестовое событие",
+                TotalSeats = 2,
                 StartAt = DateTime.UtcNow,
                 EndAt = DateTime.UtcNow.AddDays(1)
             };
@@ -185,6 +189,7 @@ namespace YAP_middle_csharp.Tests
         {
             var newEvent = new EventModel
             {
+                TotalSeats = 2,
                 Title = "Какой то суперский Ивент",
                 StartAt = DateTime.UtcNow,
                 EndAt = DateTime.UtcNow.AddMonths(1)
