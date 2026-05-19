@@ -146,6 +146,7 @@ namespace YAP_middle_csharp.Services
         /// <returns>Возвращает экземпляр созданного события</returns>
         /// <exception cref="NotFoundExceptionApp">В случае если не найден Event</exception>
         /// <exception cref="ValidationExceptionApp">В случае ошибки валидации</exception>
+        /// <exception cref="NoAvailableSeatsExceptionApp">В случае если мест не хватает</exception>
         public async Task<BookingModel> CreateBookingAsync(Guid eventId)
         {
             _logger.LogInformation("[BookingService] [CreateBookingAsync] Попытка создать бронь для события {EventId}", eventId);
