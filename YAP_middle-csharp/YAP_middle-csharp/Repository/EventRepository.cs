@@ -3,27 +3,52 @@ using YAP_middle_csharp.Models;
 
 namespace YAP_middle_csharp.Repository
 {
-    public class EventRepository : IRepository<EventModel>
+    public class EventRepository : IEventRepository
     {
         private readonly List<EventModel> _eventList = new();
 
-        public Task<IEnumerable<EventModel>> FindAll()
+        //public Task<IEnumerable<EventModel>> FindAll()
+        //{
+        //    return Task.FromResult(_eventList.AsReadOnly() as IEnumerable<EventModel>);
+        //}
+
+
+        /// <summary>
+        /// Метод-заготовка для получения данных с фильтрацией на стороне БД
+        /// </summary>
+        /// <returns></returns>
+        public Task<IQueryable<EventModel>> StartQueryToFindAll()
         {
-            return Task.FromResult(_eventList.AsReadOnly() as IEnumerable<EventModel>);
+            return Task.FromResult(_eventList.AsQueryable());
         }
 
-        public Task<EventModel?> FindById(int id)
+        /// <summary>
+        /// Метод для нахождения конкретного события
+        /// </summary>
+        /// <param name="id">УИ события</param>
+        /// <returns>Сущность события</returns>
+        public Task<EventModel?> FindById(Guid id)
         {
             return Task.FromResult(_eventList.FirstOrDefault(x => x.Id == id));
         }
 
+        /// <summary>
+        /// Создание нового события
+        /// </summary>
+        /// <param name="item">Сущность события</param>
+        /// <returns>Сущность события</returns>
         public Task Create(EventModel item)
         {
-            item.Id = _eventList.Any() ? _eventList.Max(x => x.Id) + 1 : 1;
+            item.Id = Guid.NewGuid();
             _eventList.Add(item);
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Обновление события
+        /// </summary>
+        /// <param name="item">Сущность события</param>
+        /// <returns></returns>
         public Task Update(EventModel item)
         {
             var index = _eventList.FindIndex(x => x.Id == item.Id);
@@ -32,6 +57,11 @@ namespace YAP_middle_csharp.Repository
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Удаление события
+        /// </summary>
+        /// <param name="item">Сущность события</param>
+        /// <returns></returns>
         public Task Delete(EventModel item)
         {
             _eventList.Remove(item);

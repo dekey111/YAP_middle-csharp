@@ -7,14 +7,21 @@ using YAP_middle_csharp.Middleware;
 using YAP_middle_csharp.Models;
 using YAP_middle_csharp.Repository;
 using YAP_middle_csharp.Services;
+using YAP_middle_csharp.Services.BackgroundServices;
 using YAP_middle_csharp.Validator;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddSingleton<IRepository<EventModel>, EventRepository>(); 
+builder.Services.AddHostedService<BackgroundBookingService>();
+
+builder.Services.AddSingleton<IEventRepository, EventRepository>();
+builder.Services.AddSingleton<IBookingRepository, BookingRepository>(); 
+
 builder.Services.AddScoped<IEventService, EventService>();
+builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddTransient<IValidator<EventModel>, EventValidator>();
+builder.Services.AddTransient<IValidator<BookingModel>, BookingValidator>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
