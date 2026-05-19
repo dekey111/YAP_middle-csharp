@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Net;
 using System.Reflection;
+using YAP_middle_csharp.Exceptions;
 using YAP_middle_csharp.Interfaces.IRepositories;
 using YAP_middle_csharp.Models;
 using YAP_middle_csharp.Repository;
@@ -200,18 +201,19 @@ namespace YAP_middle_csharp.Tests
             var newEvent = new EventModel 
             {
                 TotalSeats = 2,
+                AvailableSeats = 2,
                 Id = Guid.NewGuid(),
                 Title = "меня не существует",
                 StartAt = DateTime.UtcNow,
                 EndAt = DateTime.UtcNow 
             };
-            await Assert.ThrowsAsync<KeyNotFoundException>(() => _eventService.Update(newEvent));
+            await Assert.ThrowsAsync<NotFoundExceptionApp>(() => _eventService.Update(newEvent));
         }
 
         [Fact]
         public async Task FailedCreate_WhenEntityIsNull()
         {
-            await Assert.ThrowsAsync<ArgumentNullException>(() => _eventService.Create(null!));
+            await Assert.ThrowsAsync<ValidationExceptionApp>(() => _eventService.Create(null!));
         }
 
         [Fact]
