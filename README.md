@@ -94,11 +94,11 @@
 - Шаг 3. Вызов GET api/bookings/{id из шага 2} 
 
 ## Примитивы синхронизации
-1. **`Interlocked (CompareExchange)` — в модели `EventModel`**
+1. **`Interlocked (CompareExchange)` - в модели `EventModel`**
    * **Зачем нужен:** Используется для реализации неблокирующего алгоритма изменения количества мест в методах `TryReserveSeats` и `ReleaseSeats`
 
-2. **`lock (_bookingLock)` — в сервисе `BookingService`**
+2. **`lock (_bookingLock)` - в сервисе `BookingService`**
    * **Зачем нужен:** Защищает критическую секцию в методе `CreateBookingAsync`. Он гарантирует атомарность всей цепочки бизнес-логики: *Получить событие -> Проверить места -> Зарезервировать место -> Сохранить событие -> Создать бронь*
 
-3. **`SemaphoreSlim` — в фоновом воркере `BackgroundBookingService`**
+3. **`SemaphoreSlim` - в фоновом воркере `BackgroundBookingService`**
    * **Зачем нужен:** Выступает в роли асинхронного аналога `lock` для защиты операций записи в хранилище при параллельной обработке пачки задач через `Task.WhenAll`
