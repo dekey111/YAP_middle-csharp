@@ -2,8 +2,11 @@
 
 namespace YAP_middle_csharp.Interfaces.IRepositories
 {
+    /// <summary>
+    /// Интерфейс для работы с БД броней
+    /// </summary>
     public interface IBookingRepository : IGenericRepository<BookingModel>
     {
-        Task<IEnumerable<BookingModel>> FindPendingBookings();
+        Task<IEnumerable<BookingModel>> FindPendingBookingsAsync();
     }
 }

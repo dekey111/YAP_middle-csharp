@@ -2,6 +2,9 @@
 
 namespace YAP_middle_csharp.Models
 {
+    /// <summary>
+    /// Кастомная модель событий для обновления/удаления модели
+    /// </summary>
     public class EventResponse
     {
         public EventResponse() { }
@@ -13,7 +16,6 @@ namespace YAP_middle_csharp.Models
 
         [Range(1, 250, ErrorMessage = "Количество мест должно быть от 1 до 250")]
         public int TotalSeats { get; set; }
-        public int AvailableSeats { get; set; }
 
         [Range(typeof(DateTime), "2010-01-01", "2030-12-31", ErrorMessage = "Некорректная дата")]
         public DateTime StartAt { get; set; }
@@ -27,7 +29,6 @@ namespace YAP_middle_csharp.Models
             Title = eventModel.Title;
             Description = eventModel.Description;
             TotalSeats = eventModel.TotalSeats;
-            AvailableSeats = eventModel.AvailableSeats;
             StartAt = eventModel.StartAt;
             EndAt = eventModel.EndAt;
         }

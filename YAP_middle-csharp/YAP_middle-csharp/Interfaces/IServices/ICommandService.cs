@@ -13,20 +13,20 @@ namespace YAP_middle_csharp.Interfaces.IServices
         /// </summary>
         /// <param name="entity">Объект сущности для сохранения</param>
         /// <returns>Возвращает идентификатор созданной записи</returns>
-        Task<Guid> Create(T entity);
+        Task<Guid> CreateAsync(T entity);
 
         /// <summary>
         /// Обновление данных существующей записи
         /// </summary>
         /// <param name="entity">Объект сущности с обновленными данными</param>
         /// <returns>Возвращает обновленный объект сущности</returns>
-        Task<T>Update(T entity);
+        Task<T>UpdateAsync(T entity);
 
         /// <summary>
         /// Удаление записи из системы
         /// </summary>
         /// <param name="entity">Объект сущности для удаления</param>
         /// <returns>Ничего не возвращает</returns>
-        Task Delete(T entity);
+        Task DeleteAsync(T entity);
     }
 }

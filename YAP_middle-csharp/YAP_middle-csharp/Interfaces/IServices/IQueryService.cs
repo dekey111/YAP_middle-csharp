@@ -1,5 +1,4 @@
-﻿using System.Security.Principal;
-using YAP_middle_csharp.Models;
+﻿using YAP_middle_csharp.Models;
 
 namespace YAP_middle_csharp.Interfaces.IServices
 {
@@ -14,7 +13,7 @@ namespace YAP_middle_csharp.Interfaces.IServices
         /// </summary>
         /// <param name="id">уникальной идентификатор</param>
         /// <returns>Возвращает найденную сущность или null, если ничего не найдено</returns>
-        Task<T?> FindById(Guid id);
+        Task<T?> FindByIdAsync(Guid id);
 
         /// <summary>
         /// Получение списка сущностей с поддержкой фильтрации и пагинации
@@ -25,7 +24,7 @@ namespace YAP_middle_csharp.Interfaces.IServices
         /// <param name="page">Номер страницы</param>
         /// <param name="pageSize">Количество элементов на странице</param>
         /// <returns>Объект с результатами пагинации</returns>
-        Task<PaginatedResult<T>> FindAll(string? title = null,
+        Task<PaginatedResult<T>> FindAllAsync(string? title = null,
                                          DateTime? from = null,
                                          DateTime? to = null,
                                          int page = 1,

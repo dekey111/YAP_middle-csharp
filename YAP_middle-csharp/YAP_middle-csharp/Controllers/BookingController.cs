@@ -25,11 +25,10 @@ namespace YAP_middle_csharp.Controllers
         [HttpGet("/bookings/{id:guid}")]
         [ProducesResponseType(typeof(BookingModel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status409Conflict)]
-        public async Task<IActionResult> GetBooking(Guid id)
+        public async Task<IActionResult> GetBookingAsync(Guid id)
         {
             _logger.LogInformation("[BookingController] Запрос данных брони {BookingId}", id);
-            return Ok(await _bookingService.FindById(id));
+            return Ok(await _bookingService.FindByIdAsync(id));
         }
     }
 }

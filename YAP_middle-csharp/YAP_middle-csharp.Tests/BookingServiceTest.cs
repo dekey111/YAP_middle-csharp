@@ -51,7 +51,7 @@ namespace YAP_middle_csharp.Tests
                 StartAt = DateTime.UtcNow,
                 EndAt = DateTime.UtcNow.AddMonths(1) 
             };
-            var id = await _eventService.Create(newEvent);
+            var id = await _eventService.CreateAsync(newEvent);
             var booking = await _bookingService.CreateBookingAsync(id);
 
             Assert.NotNull(booking);
@@ -75,7 +75,7 @@ namespace YAP_middle_csharp.Tests
                 StartAt = DateTime.UtcNow,
                 EndAt = DateTime.UtcNow.AddMonths(1)
             };
-            var id = await _eventService.Create(newEvent);
+            var id = await _eventService.CreateAsync(newEvent);
             var booking1 = await _bookingService.CreateBookingAsync(id);
             var booking2 = await _bookingService.CreateBookingAsync(id);
             var booking3 = await _bookingService.CreateBookingAsync(id);
@@ -104,11 +104,11 @@ namespace YAP_middle_csharp.Tests
                 StartAt = DateTime.UtcNow,
                 EndAt = DateTime.UtcNow.AddMonths(1)
             };
-            var id = await _eventService.Create(newEvent);
+            var id = await _eventService.CreateAsync(newEvent);
             var newBooking = await _bookingService.CreateBookingAsync(id);
 
 
-            var findBooking = await _bookingService.FindById(newBooking.Id);
+            var findBooking = await _bookingService.FindByIdAsync(newBooking.Id);
 
             Assert.NotNull(findBooking);
             Assert.Equal(newBooking.Id, findBooking.Id);
@@ -121,11 +121,6 @@ namespace YAP_middle_csharp.Tests
         [Fact]
         public async Task BackgroundService_IndependentTest_ShouldConfirm()
         {
-            //Честно говоря, это не мой метод. Это всё сделал AI. Я вообще не понял как это делать.
-            //Мне кажется это недочёт спринта, надо показывать как делать такие вещи 
-            //Ну, либо я тупой 🤷‍
-
-
             var bookingRepository = new BookingRepository();
             var eventRepository = new EventRepository();
             var localEventService = new EventService(eventRepository, new NullLogger<EventService>());
@@ -140,7 +135,7 @@ namespace YAP_middle_csharp.Tests
                 StartAt = DateTime.UtcNow,
                 EndAt = DateTime.UtcNow.AddDays(1)
             };
-            var eventId = await localEventService.Create(newEvent);
+            var eventId = await localEventService.CreateAsync(newEvent);
 
             var booking = await localBookingService.CreateBookingAsync(eventId);
 
@@ -164,7 +159,7 @@ namespace YAP_middle_csharp.Tests
             cts.Cancel();
             try { await runTask; } catch (OperationCanceledException) { }
 
-            var result = await localBookingService.FindById(booking.Id);
+            var result = await localBookingService.FindByIdAsync(booking.Id);
 
             Assert.NotNull(result);
             Assert.Equal(BookingStatusEnum.Confirmed, result.Status);
@@ -186,9 +181,9 @@ namespace YAP_middle_csharp.Tests
                 StartAt = DateTime.UtcNow,
                 EndAt = DateTime.UtcNow.AddMonths(1)
             };
-            var id = await _eventService.Create(newEvent);
+            var id = await _eventService.CreateAsync(newEvent);
             var newBooking = await _bookingService.CreateBookingAsync(id);
-            var updatedEvent = await _eventService.FindById(id);
+            var updatedEvent = await _eventService.FindByIdAsync(id);
 
             Assert.NotNull(newBooking);
             Assert.Equal(newEvent.Id, newBooking.EventId);
@@ -211,10 +206,10 @@ namespace YAP_middle_csharp.Tests
                 StartAt = DateTime.UtcNow,
                 EndAt = DateTime.UtcNow.AddMonths(1)
             };
-            var id = await _eventService.Create(newEvent);
+            var id = await _eventService.CreateAsync(newEvent);
             var newBooking1 = await _bookingService.CreateBookingAsync(id);
             var newBooking2 = await _bookingService.CreateBookingAsync(id);
-            var updatedEvent = await _eventService.FindById(id);
+            var updatedEvent = await _eventService.FindByIdAsync(id);
 
             Assert.NotNull(newBooking1);
             Assert.NotNull(newBooking2);
@@ -240,10 +235,10 @@ namespace YAP_middle_csharp.Tests
                 StartAt = DateTime.UtcNow,
                 EndAt = DateTime.UtcNow.AddMonths(1)
             };
-            var id = await _eventService.Create(newEvent);
+            var id = await _eventService.CreateAsync(newEvent);
             var newBooking1 = await _bookingService.CreateBookingAsync(id);
             var newBooking2 = await _bookingService.CreateBookingAsync(id);
-            var updatedEvent = await _eventService.FindById(id);
+            var updatedEvent = await _eventService.FindByIdAsync(id);
 
             var exception = await Assert.ThrowsAsync<NoAvailableSeatsExceptionApp>(() => _bookingService.CreateBookingAsync(id)); 
             Assert.Equal("Недостаточно мест на событие", exception.Message);
@@ -293,16 +288,16 @@ namespace YAP_middle_csharp.Tests
                 StartAt = DateTime.UtcNow,
                 EndAt = DateTime.UtcNow.AddMonths(1)
             };
-            var id = await _eventService.Create(newEvent);
+            var id = await _eventService.CreateAsync(newEvent);
 
             await _bookingService.CreateBookingAsync(id); 
-            var eventAfterBook = await _eventService.FindById(id);
+            var eventAfterBook = await _eventService.FindByIdAsync(id);
             Assert.Equal(4, eventAfterBook?.AvailableSeats);
 
-            await eventAfterBook!.ReleaseSeats(1);
-            await _eventService.Update(eventAfterBook);
+            eventAfterBook!.ReleaseSeats(1);
+            await _eventService.UpdateAsync(eventAfterBook);
 
-            var eventAfterRelease = await _eventService.FindById(id);
+            var eventAfterRelease = await _eventService.FindByIdAsync(id);
             Assert.Equal(5, eventAfterRelease?.AvailableSeats); 
         }
 
@@ -320,13 +315,13 @@ namespace YAP_middle_csharp.Tests
                 StartAt = DateTime.UtcNow,
                 EndAt = DateTime.UtcNow.AddMonths(1)
             };
-            var id = await _eventService.Create(newEvent);
+            var id = await _eventService.CreateAsync(newEvent);
 
             await _bookingService.CreateBookingAsync(id); 
 
-            var eventModel = await _eventService.FindById(id);
-            await eventModel!.ReleaseSeats(1);
-            await _eventService.Update(eventModel);
+            var eventModel = await _eventService.FindByIdAsync(id);
+            eventModel!.ReleaseSeats(1);
+            await _eventService.UpdateAsync(eventModel);
 
             var newBooking = await _bookingService.CreateBookingAsync(id);
 
@@ -347,7 +342,7 @@ namespace YAP_middle_csharp.Tests
                 StartAt = DateTime.UtcNow,
                 EndAt = DateTime.UtcNow.AddMonths(1)
             };
-            var id = await _eventService.Create(newEvent);
+            var id = await _eventService.CreateAsync(newEvent);
 
             int totalRequests = 20;
             var tasks = new List<Task<BookingModel>>();
@@ -373,7 +368,7 @@ namespace YAP_middle_csharp.Tests
                 }
             }
 
-            var updatedEvent = await _eventService.FindById(id);
+            var updatedEvent = await _eventService.FindByIdAsync(id);
 
             Assert.Equal(5, successfulBookingsCount);   
             Assert.Equal(15, exceptionCount);          
@@ -396,7 +391,7 @@ namespace YAP_middle_csharp.Tests
                 StartAt = DateTime.UtcNow,
                 EndAt = DateTime.UtcNow.AddMonths(1)
             };
-            var id = await _eventService.Create(newEvent);
+            var id = await _eventService.CreateAsync(newEvent);
 
             var tasks = new List<Task<BookingModel>>();
 
@@ -441,8 +436,8 @@ namespace YAP_middle_csharp.Tests
                 StartAt = DateTime.UtcNow,
                 EndAt = DateTime.UtcNow.AddMonths(1)
             };
-            var eventId = await _eventService.Create(newEvent);
-            await _eventService.Delete(newEvent);
+            var eventId = await _eventService.CreateAsync(newEvent);
+            await _eventService.DeleteAsync(newEvent);
 
             await Assert.ThrowsAsync<NotFoundExceptionApp>(() => _bookingService.CreateBookingAsync(eventId));
         }
@@ -456,7 +451,7 @@ namespace YAP_middle_csharp.Tests
         public async Task FindByDosentEvent_ReturnNotFoundExceptionApp()
         {
             var randomGuid = Guid.NewGuid();
-            await Assert.ThrowsAsync<NotFoundExceptionApp>(() => _bookingService.FindById(randomGuid));
+            await Assert.ThrowsAsync<NotFoundExceptionApp>(() => _bookingService.FindByIdAsync(randomGuid));
         }
 
 
@@ -475,7 +470,7 @@ namespace YAP_middle_csharp.Tests
                 StartAt = DateTime.UtcNow,
                 EndAt = DateTime.UtcNow.AddMonths(1)
             };
-            var id = await _eventService.Create(newEvent);
+            var id = await _eventService.CreateAsync(newEvent);
             var exception = await Assert.ThrowsAsync<NoAvailableSeatsExceptionApp>(() => _bookingService.CreateBookingAsync(id));
             Assert.Equal("Недостаточно мест на событие", exception.Message);
         }

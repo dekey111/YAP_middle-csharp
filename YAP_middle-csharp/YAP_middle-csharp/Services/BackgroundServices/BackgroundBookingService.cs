@@ -17,6 +17,12 @@ namespace YAP_middle_csharp.Services.BackgroundServices
         private readonly ILogger<BackgroundBookingService> _logger = logger;
         private readonly SemaphoreSlim _processingSemaphore = new(1, 1);
 
+
+        /// <summary>
+        /// Метод ожидания новых необработанных заявок
+        /// </summary>
+        /// <param name="stoppingToken"></param>
+        /// <returns></returns>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("[BackgroundBookingService] Фоновый сервис запущен");
@@ -28,7 +34,7 @@ namespace YAP_middle_csharp.Services.BackgroundServices
                     using (var scope = _serviceProvider.CreateScope())
                     {
                         var repository = scope.ServiceProvider.GetRequiredService<IBookingRepository>();
-                        var pendingBooks = (await repository.FindPendingBookings()).ToList();
+                        var pendingBooks = (await repository.FindPendingBookingsAsync()).ToList();
                         if(pendingBooks.Any())
                         {
                             var tasks = pendingBooks.Select(booking => ProcessBookingAsync(booking, stoppingToken));
@@ -49,6 +55,12 @@ namespace YAP_middle_csharp.Services.BackgroundServices
             } 
         }
 
+        /// <summary>
+        /// Метод обработки необработанного заказа
+        /// </summary>
+        /// <param name="booking">Сущность бронирования</param>
+        /// <param name="stoppingToken"></param>
+        /// <returns></returns>
         private async Task ProcessBookingAsync(BookingModel booking, CancellationToken stoppingToken)
         {
             await Task.Delay(2000, stoppingToken);
@@ -63,7 +75,7 @@ namespace YAP_middle_csharp.Services.BackgroundServices
                 try
                 {
                     _logger.LogInformation("[BackgroundBookingService] Взяли в работу ID: {idBook}", booking.Id);
-                    findEvent = await eventService.FindById(booking.EventId);
+                    findEvent = await eventService.FindByIdAsync(booking.EventId);
                     if (findEvent == null)
                     {
                         _logger.LogWarning("[BackgroundBookingService] Событие {EventId} не найдено для брони {BookingId}. Отклонение.", booking.EventId, booking.Id);
@@ -71,14 +83,14 @@ namespace YAP_middle_csharp.Services.BackgroundServices
                         booking.Status = BookingStatusEnum.Rejected;
                         booking.ProcessedAt = DateTime.UtcNow;
 
-                        await bookingRepository.Update(booking);
+                        await bookingRepository.UpdateAsync(booking);
                         return;
                     }
 
                     booking.Status = BookingStatusEnum.Confirmed;
                     booking.ProcessedAt = DateTime.UtcNow;
 
-                    await bookingRepository.Update(booking);
+                    await bookingRepository.UpdateAsync(booking);
                     _logger.LogInformation("[BackgroundBookingService] Обработали ID: {idBook}", booking.Id);
 
                 }
@@ -88,27 +100,21 @@ namespace YAP_middle_csharp.Services.BackgroundServices
                 }
                 catch
                 {
-                    try
-                    {
-                        booking.Status = BookingStatusEnum.Rejected;
-                        booking.ProcessedAt = DateTime.UtcNow;
-                        await bookingRepository.Update(booking);
+                    booking.Status = BookingStatusEnum.Rejected;
+                    booking.ProcessedAt = DateTime.UtcNow;
+                    await bookingRepository.UpdateAsync(booking);
 
-                        if (findEvent == null)
-                        {
-                            findEvent = await eventService.FindById(booking.EventId);
-                        }
-
-                        if (findEvent != null)
-                        {
-                            await findEvent.ReleaseSeats(1);
-                            await eventService.Update(findEvent);
-                        }
-                    }
-                    catch (Exception ex)
+                    if (findEvent == null)
                     {
-                        _logger.LogCritical(ex, "[BackgroundBookingService] Критическая ошибка отката брони {Id}", booking.Id);
+                        findEvent = await eventService.FindByIdAsync(booking.EventId);
                     }
+
+                    if (findEvent != null)
+                    {
+                        findEvent.ReleaseSeats(1);
+                        await eventService.UpdateAsync(findEvent);
+                    }
+                    throw;
                 }
                 finally
                 {

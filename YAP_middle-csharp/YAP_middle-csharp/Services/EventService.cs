@@ -27,8 +27,8 @@ namespace YAP_middle_csharp.Services
         /// <param name="page">Опциональное поле для выбора страницы, со значением по умолчанию = 1 </param>
         /// <param name="pageSize">Опциональное поле для выбора количества выгружаемых строк, со значением по умолчанию = 10</param>
         /// <returns>Возвращается EventModel </returns>
-        /// <exception cref="ValidationException">Выбрасывается, если параметры пагинации вне допустимого диапазона</exception>
-        public async Task<PaginatedResult<EventModel>> FindAll(string? title = null, DateTime? from = null, DateTime? to = null,
+        /// <exception cref="ValidationExceptionApp">Выбрасывается, если параметры пагинации вне допустимого диапазона</exception>
+        public async Task<PaginatedResult<EventModel>> FindAllAsync(string? title = null, DateTime? from = null, DateTime? to = null,
             int page = 1, int pageSize = 10)
         {
             _logger.LogDebug("[EventService] [FindAll] Начало выполнения FindAll: title={Title}, from={From}, to={To}, page ={Page}, pSize={pSize}",
@@ -37,16 +37,16 @@ namespace YAP_middle_csharp.Services
             if(page < 1)
             {
                 _logger.LogWarning("[EventService] [FindAll] Передан некорректный номер страницы: {Page}", page);
-                throw new ValidationException("Номер страницы должен быть не менее 1");
+                throw new ValidationExceptionApp("Номер страницы должен быть не менее 1");
             }
 
             if (pageSize < 1 || pageSize > 200)
             {
                 _logger.LogWarning("[EventService] [FindAll] Передан некорректный размер страницы: {PageSize}", pageSize);
-                throw new ValidationException("Размер страницы должен быть от 1 до 200");
+                throw new ValidationExceptionApp("Размер страницы должен быть от 1 до 200");
             }
 
-            var query = await _repository.StartQueryToFindAll();
+            var query = await _repository.StartQueryToFindAllAsync();
 
             if (!string.IsNullOrEmpty(title))
             {
@@ -81,11 +81,11 @@ namespace YAP_middle_csharp.Services
         /// </summary>
         /// <param name="id">Уникальный идентификатор события</param>
         /// <returns>Возвращает экземпляр EventModel в случае нахождения в противном случае null </returns>
-        public async Task<EventModel?> FindById(Guid id)
+        public async Task<EventModel?> FindByIdAsync(Guid id)
         {
             _logger.LogDebug("[EventService] [FindById] Попытка найти Event с ID = {id}", id);
             
-            var findEvent = await _repository.FindById(id);
+            var findEvent = await _repository.FindByIdAsync(id);
 
             var comment = findEvent is null ? "Не получилось" : "Получилось";
             _logger.LogInformation($"[EventService] [FindById] {comment} найти Event с ID = {id}", id);
@@ -99,7 +99,7 @@ namespace YAP_middle_csharp.Services
         /// <param name="entity">Принимает модель события</param>
         /// <returns>Возвращает уникальный идентификатор нового события</returns>
         /// <exception cref="ValidationExceptionApp">Выбрасывается, в случае если передана пустая модель</exception>
-        public async Task<Guid> Create(EventModel entity)
+        public async Task<Guid> CreateAsync(EventModel entity)
         {
             _logger.LogDebug("[EventService] [Create] Попытка Create Event. entity = {@entity} ", entity);
 
@@ -109,7 +109,7 @@ namespace YAP_middle_csharp.Services
                 throw new ValidationExceptionApp(nameof(entity));
             }
 
-            await _repository.Create(entity);
+            await _repository.CreateAsync(entity);
             _logger.LogInformation("[EventService] [Create] Создание нового Event с Id: {Id} ", entity.Id);
 
             return entity.Id;
@@ -120,9 +120,9 @@ namespace YAP_middle_csharp.Services
         /// </summary>
         /// <param name="entity">Принимает модель события</param>
         /// <returns>Возвращает обновлённую модель</returns>
-        /// <exception cref="ArgumentNullException">Выбрасывается, в случае если модель пустая</exception>
-        /// <exception cref="KeyNotFoundException">Выбрасывается в случае, если такого события по ID не найдено</exception>
-        public async Task<EventModel> Update(EventModel entity)
+        /// <exception cref="ValidationExceptionApp">Выбрасывается, в случае если модель пустая</exception>
+        /// <exception cref="NotFoundExceptionApp">Выбрасывается в случае, если такого события по ID не найдено</exception>
+        public async Task<EventModel> UpdateAsync(EventModel entity)
         {
 
             if (entity is null)
@@ -131,7 +131,7 @@ namespace YAP_middle_csharp.Services
                 throw new ValidationExceptionApp(nameof(entity));
             }
 
-            var findEvent = await _repository.FindById(entity.Id);
+            var findEvent = await _repository.FindByIdAsync(entity.Id);
             if (findEvent is null)
             {
                 _logger.LogError("[EventService] [Update] Ошибка Update. Событие с ID: {id}, не найдено!", entity.Id);
@@ -140,7 +140,7 @@ namespace YAP_middle_csharp.Services
 
             _logger.LogDebug("[EventService] [Update] Попытка обновления Event. entity = {@entity} ", findEvent);
 
-            await _repository.Update(entity);
+            await _repository.UpdateAsync(entity);
 
             _logger.LogInformation("[EventService] [Update] Event обновлён. Новые данные: entity = {@entity} ", entity);
 
@@ -152,9 +152,9 @@ namespace YAP_middle_csharp.Services
         /// </summary>
         /// <param name="entity">Принимает модель для удаления</param>
         /// <returns>Ничего не возвращается</returns>
-        /// <exception cref="ArgumentNullException">Выбрасывается, в случае если модель пустая</exception>
-        /// <exception cref="KeyNotFoundException">Выбрасывается в случае, если такого события по ID не найдено</exception>
-        public async Task Delete(EventModel entity)
+        /// <exception cref="ValidationExceptionApp">Выбрасывается, в случае если модель пустая</exception>
+        /// <exception cref="NotFoundExceptionApp">Выбрасывается в случае, если такого события по ID не найдено</exception>
+        public async Task DeleteAsync(EventModel entity)
         {
             if (entity is null)
             {
@@ -162,18 +162,11 @@ namespace YAP_middle_csharp.Services
                 throw new ValidationExceptionApp(nameof(entity));
             }
 
-            var findEvent = await _repository.FindById(entity.Id);
-            if (findEvent is null)
-            {
-                _logger.LogWarning("[EventService] [Delete] Ошибка Delete. Событие с ID {Id} не найдено", entity.Id);
-                throw new NotFoundExceptionApp("Event не найден!");
-            }
+            _logger.LogDebug("[EventService] [Delete] Попытка Delete Event. entity = {@entity} ", entity);
 
-            _logger.LogDebug("[EventService] [Delete] Попытка Delete Event. entity = {@entity} ", findEvent);
+            await _repository.DeleteAsync(entity);
 
-            await _repository.Delete(findEvent);
-
-            _logger.LogInformation("[EventService] [Delete] Event удалён: id={Id}", findEvent.Id);
+            _logger.LogInformation("[EventService] [Delete] Event удалён: id={Id}", entity.Id);
         }
     }
 }

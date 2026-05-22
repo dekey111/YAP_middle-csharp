@@ -30,9 +30,11 @@ namespace YAP_middle_csharp.Controllers
         /// <param name="page">Опциональное поле для выбора страницы, со значением по умолчанию = 1 </param>
         /// <param name="pageSize">Опциональное поле для выбора количества выгружаемых строк, со значением по умолчанию = 10</param>
         /// <returns>Возвращается Json-Структуру и статусом 200-OK в случае успеха</returns>
+        /// <returns>Возвращает 400 в случае ошибки получения страниц или количество элементов на странице</returns>
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<EventResponse>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAllEvents(
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> GetAllEventsAsync(
             [FromQuery] string? title,
             [FromQuery] DateTime? from,
             [FromQuery] DateTime? to,
@@ -41,7 +43,7 @@ namespace YAP_middle_csharp.Controllers
         {
             _logger.LogDebug("[EventsController] [GetAllEvents]");
 
-            var result = await _eventService.FindAll(title, from, to, page, pageSize);
+            var result = await _eventService.FindAllAsync(title, from, to, page, pageSize);
             var respondedItems = result.Items.Select(e => new EventResponse(e));
 
             return Ok(new PaginatedResult<EventResponse>
@@ -61,11 +63,11 @@ namespace YAP_middle_csharp.Controllers
         [HttpGet("{id:Guid}")]
         [ProducesResponseType(typeof(EventResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetEventById([FromRoute] Guid id)
+        public async Task<IActionResult> GetEventByIdAsync([FromRoute] Guid id)
         {
             _logger.LogDebug("[EventsController] [GetEventById] Запрос на поиск EventId: {EventId}", id);
 
-            var findEvent = await _eventService.FindById(id);
+            var findEvent = await _eventService.FindByIdAsync(id);
             if (findEvent == null)
             {
                 _logger.LogDebug("[EventsController] [GetEventById] Event c id: {EventId} не найден!", id);
@@ -80,10 +82,11 @@ namespace YAP_middle_csharp.Controllers
         /// </summary>
         /// <param name="eventModel">Принимает модель события</param>
         /// <returns>Возвращает 201 с ссылкой на созданное событие</returns>
+        /// <returns>Возвращает 400 в случае ошибки валидации события</returns>
         [HttpPost]
         [ProducesResponseType(typeof(EventResponse), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> AddEvent([FromBody] EventRequest eventRequest)
+        public async Task<IActionResult> AddEventAsync([FromBody] EventRequest eventRequest)
         {
             _logger.LogDebug("[EventsController] [AddEvent] Запрос на добавление нового события");
 
@@ -104,21 +107,26 @@ namespace YAP_middle_csharp.Controllers
                 throw new ValidationExceptionApp(string.Join("; ", errors));
             }
 
-            var newIdEvent = await _eventService.Create(eventModel);
+            var newIdEvent = await _eventService.CreateAsync(eventModel);
             var newEvent = new EventResponse(eventModel);
-            return CreatedAtAction(nameof(GetEventById), new { id = newIdEvent }, newEvent);
+            return CreatedAtAction(nameof(GetEventByIdAsync), new { id = newIdEvent }, newEvent);
         }
 
         /// <summary>
         /// Создание нового бронирования на событие
         /// </summary>
         /// <param name="eventId">Принимает уникальный идентификатор события</param>
-        /// <returns>Возвращает новую бронь</returns>
+        /// <returns>202 - Возвращает новую бронь</returns>
+        /// <returns>400 - Возвращается при ошибки валидации</returns>
+        /// <returns>404 - Возвращается, в случае если не удалось найти событие </returns>
+        /// <returns>409 - Возвращается если свободных мест больше нет</returns>
         /// <exception cref="NotFoundExceptionApp"></exception>
         [HttpPost("{eventId:guid}/book")]
         [ProducesResponseType(typeof(BookingModel), StatusCodes.Status202Accepted)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> AddBookingByEventId(Guid eventId)
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+        public async Task<IActionResult> AddBookingByEventIdAsync(Guid eventId)
         {
             _logger.LogInformation("[EventsController] [AddBookingByEventId] Запрос на бронирование события {EventId}", eventId);
             var newBooking = await _bookingService.CreateBookingAsync(eventId);
@@ -130,11 +138,14 @@ namespace YAP_middle_csharp.Controllers
         /// </summary>
         /// <param name="id">Принимает существующий id из списка событий из query</param>
         /// <param name="eventModel">Принимает новую модель события из body</param>
-        /// <returns>Возвращает статус 200 OK c изменённым элементом, либо 400 с описанием ошибки</returns>
+        /// <returns>Возвращает - 200 OK c изменённым элементом, либо 400 с описанием ошибки</returns>
+        /// <returns>Возвращает - 400 В случае ошибки валидации</returns>
+        /// <returns>Возвращает - 404 В случае если событие не найдено</returns>
         [HttpPut("{id:Guid}")]
         [ProducesResponseType(typeof(EventResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> EditEvent([FromRoute] Guid id, [FromBody] EventResponse eventResponse)
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> EditEventAsync([FromRoute] Guid id, [FromBody] EventResponse eventResponse)
         {
             _logger.LogInformation("[EventsController] [EditEvent] Запрос на изменения события {EventId}", id);
 
@@ -150,7 +161,6 @@ namespace YAP_middle_csharp.Controllers
                 Title = eventResponse.Title,
                 Description = eventResponse.Description,
                 TotalSeats = eventResponse.TotalSeats,
-                AvailableSeats = eventResponse.AvailableSeats,
                 StartAt = eventResponse.StartAt,
                 EndAt = eventResponse.EndAt
             };
@@ -162,7 +172,7 @@ namespace YAP_middle_csharp.Controllers
                 throw new ValidationExceptionApp(string.Join("; ", errors));
             }
 
-            var updatedEvent = await _eventService.Update(eventModel);
+            var updatedEvent = await _eventService.UpdateAsync(eventModel);
 
             var returnUpdatedEvent = new EventResponse(updatedEvent);
             return Ok(returnUpdatedEvent);
@@ -172,23 +182,24 @@ namespace YAP_middle_csharp.Controllers
         /// Метод удаления события
         /// </summary>
         /// <param name="id">Принимает существующий id из списка событий из query</param>
-        /// <returns>возвращает статус 204 в случае успеха, либо 400 с описанием ошибки</returns>
+        /// <returns>возвращает - 204 в случае успеха</returns>
+        /// <returns>Возвращает - 404 В случае если событие не найдено</returns>
         [HttpDelete("{id:Guid}")]
         [ProducesResponseType(typeof(EventResponse), StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> DeleteEvent([FromRoute] Guid id)
+        public async Task<IActionResult> DeleteEventAsync([FromRoute] Guid id)
         {
             _logger.LogInformation("[EventsController] [DeleteEvent] Запрос на удаление события {EventId}", id);
 
-            var findEvent = await _eventService.FindById(id);
+            var findEvent = await _eventService.FindByIdAsync(id);
 
-            if (findEvent == null)
+            if (findEvent is null)
             {
                 _logger.LogInformation("[EventsController] [DeleteEvent]  Event c id: {id} не найден!", id);
                 throw new NotFoundExceptionApp($"Event c id: {id} не найден!");
             }
 
-            await _eventService.Delete(findEvent);
+            await _eventService.DeleteAsync(findEvent);
             return NoContent();
         }
     }

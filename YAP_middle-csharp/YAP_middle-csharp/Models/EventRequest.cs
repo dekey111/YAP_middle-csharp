@@ -2,6 +2,9 @@
 
 namespace YAP_middle_csharp.Models
 {
+    /// <summary>
+    /// Кастомная модель событий для добавления нового события
+    /// </summary>
     public class EventRequest
     {
         public EventRequest() { }

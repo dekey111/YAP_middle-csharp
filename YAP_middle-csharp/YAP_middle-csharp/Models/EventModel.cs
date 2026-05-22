@@ -3,6 +3,9 @@ using System.Diagnostics.Metrics;
 
 namespace YAP_middle_csharp.Models
 {
+    /// <summary>
+    /// Базовая модель событий из БД
+    /// </summary>
     public class EventModel
     {
         public Guid Id { get; set; }
@@ -41,35 +44,35 @@ namespace YAP_middle_csharp.Models
         }
 
 
-        public Task<bool> TryReserveSeats(int count = 1)
+        public bool TryReserveSeats(int count = 1)
         {
-            if (count <= 0) return Task.FromResult(false);
+            if (count <= 0) return false;
             int current, updated;
 
             do
             {
                 current = _availableSeats;
-                if (current < count) return Task.FromResult(false);
-                updated = current - count;
+                if (current < count) return false;
+                    updated = current - count;
             }
             while (Interlocked.CompareExchange(ref _availableSeats, updated, current) != current);
 
-            return Task.FromResult(true);
+            return true;
         }
 
-        public Task<bool> ReleaseSeats(int count = 1)
+        public bool ReleaseSeats(int count = 1)
         {
-            if (count <= 0) return Task.FromResult(false);
+            if (count <= 0) return false;
             int current, updated;
             do
             {
                 current = _availableSeats;
                 var total = _totalSeats;
-                if(current + count > total) return Task.FromResult(false);
-                updated = current + count;
+                if(current + count > total) return false;
+                    updated = current + count;
             }
             while (Interlocked.CompareExchange(ref _availableSeats, updated, current) != current);
-            return Task.FromResult(true);
+            return true;
         }
     }
 }

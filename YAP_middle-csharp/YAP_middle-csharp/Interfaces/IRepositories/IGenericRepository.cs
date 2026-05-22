@@ -13,34 +13,34 @@
         /// Метод, который возвращает голый запрос для обработки на стороне БД, с возможностью подкрутить необходимые фильтрации
         /// </remarks>
         /// <returns>Возвращает подготовленный шаблон получения данных</returns>
-        Task<IQueryable<T>> StartQueryToFindAll();
+        Task<IQueryable<T>> StartQueryToFindAllAsync();
 
         /// <summary>
         /// Поиск записи по идентификатору
         /// </summary>
         /// <param name="id">Уникальный идентификатор</param>
         /// <returns>Возвращает найденный тип из хранилища</returns>
-        Task<T?> FindById(Guid id);
+        Task<T?> FindByIdAsync(Guid id);
 
         /// <summary>
         /// Сохранение новой сущности в хранилище
         /// </summary>
         /// <param name="entity">Новая сущность</param>
         /// <returns>Ничего не возвращает</returns>
-        Task Create(T entity);
+        Task CreateAsync(T entity);
 
         /// <summary>
         /// Обновление существующей сущности в хранилище
         /// </summary>
         /// <param name="entity">Новая сущность</param>
         /// <returns>Ничего не возвращает</returns>
-        Task Update(T entity);
+        Task UpdateAsync(T entity);
 
         /// <summary>
         /// Удаление сущности из хранилища
         /// </summary>
         /// <param name="entity">Сущность для удаления</param>
         /// <returns>Ничего не возвращает</returns>
-        Task Delete(T entity);
+        Task DeleteAsync(T entity);
     }
 }

@@ -2,6 +2,9 @@
 
 namespace YAP_middle_csharp.Models
 {
+    /// <summary>
+    /// Базовая модель бронирований из БД
+    /// </summary>
     public class BookingModel
     {
         public required Guid Id { get; set; }
