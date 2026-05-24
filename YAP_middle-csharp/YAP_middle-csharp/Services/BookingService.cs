@@ -19,9 +19,8 @@ namespace YAP_middle_csharp.Services
         private readonly ILogger<BookingService> _logger = logger;
         private readonly IBookingRepository _repository = repository;
         private readonly IEventService _eventService = eventService;
-        private readonly SemaphoreSlim _bookingSemaphore = new (1, 1);
 
-
+        private readonly static SemaphoreSlim _bookingSemaphore = new (1, 1);
 
 
         /// <summary>
