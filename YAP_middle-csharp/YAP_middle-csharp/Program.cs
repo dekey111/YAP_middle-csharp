@@ -15,8 +15,8 @@ using YAP_middle_csharp.Validator;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("Default")
-    ?? throw new InvalidOperationException("Connection string 'Default' not found.");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString).LogTo(Console.WriteLine));
