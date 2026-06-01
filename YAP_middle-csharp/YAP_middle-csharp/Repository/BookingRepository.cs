@@ -3,20 +3,18 @@ using YAP_middle_csharp.Models;
 
 namespace YAP_middle_csharp.Repository
 {
+    /// <summary>
+    /// Реализация работы с БД бронирований
+    /// </summary>
     public class BookingRepository : IBookingRepository
     {
         private readonly List<BookingModel> _bookList = new();
-
-        //public Task<IEnumerable<BookingModel>> FindAll()
-        //{
-        //    return Task.FromResult(_bookList.AsReadOnly() as IEnumerable<BookingModel>);
-        //}
 
         /// <summary>
         /// Метод-заготовка для получения данных с фильтрацией на стороне БД
         /// </summary>
         /// <returns></returns>
-        public Task<IQueryable<BookingModel>> StartQueryToFindAll()
+        public Task<IQueryable<BookingModel>> StartQueryToFindAllAsync()
         {
             return Task.FromResult(_bookList.AsQueryable());
         }
@@ -25,7 +23,7 @@ namespace YAP_middle_csharp.Repository
         /// Метод для нахождения необработанных броней
         /// </summary>
         /// <returns></returns>
-        public Task<IEnumerable<BookingModel>> FindPendingBookings()
+        public Task<IEnumerable<BookingModel>> FindPendingBookingsAsync()
         {
             return Task.FromResult(_bookList.Where(x => x.Status == BookingStatusEnum.Pending));
         }
@@ -35,7 +33,7 @@ namespace YAP_middle_csharp.Repository
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public Task<BookingModel?> FindById(Guid id)
+        public Task<BookingModel?> FindByIdAsync(Guid id)
         {
             return Task.FromResult(_bookList.FirstOrDefault(x => x.Id == id));
         }
@@ -45,7 +43,7 @@ namespace YAP_middle_csharp.Repository
         /// </summary>
         /// <param name="entity">Сущность бронирования</param>
         /// <returns>Сущность бронирования</returns>
-        public Task Create(BookingModel entity)
+        public Task CreateAsync(BookingModel entity)
         {
             entity.Id = Guid.NewGuid();
             _bookList.Add(entity);
@@ -57,7 +55,7 @@ namespace YAP_middle_csharp.Repository
         /// </summary>
         /// <param name="entity">Сущность бронирования</param>
         /// <returns>Сущность бронирования</returns>
-        public Task Update(BookingModel entity)
+        public Task UpdateAsync(BookingModel entity)
         {
             var findIndex = _bookList.FindIndex(x => x.Id == entity.Id);
             if (findIndex != -1)
@@ -70,7 +68,7 @@ namespace YAP_middle_csharp.Repository
         /// </summary>
         /// <param name="entity">Сущность бронирования</param>
         /// <returns></returns>
-        public Task Delete(BookingModel entity)
+        public Task DeleteAsync(BookingModel entity)
         {
             _bookList.Remove(entity);
             return Task.CompletedTask;

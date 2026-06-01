@@ -4,6 +4,9 @@ using YAP_middle_csharp.Exceptions;
 
 namespace YAP_middle_csharp.Middleware
 {
+    /// <summary>
+    /// Кастомный глобальный обработчик ошибок
+    /// </summary>
     public class GlobalExceptionHandlingMiddleware
     {
         private readonly RequestDelegate _next;
@@ -15,6 +18,11 @@ namespace YAP_middle_csharp.Middleware
             _logger = logger;
         }
 
+        /// <summary>
+        /// Запускаем каждый DI в try catch для глобальной обработки ошибок
+        /// </summary>
+        /// <param name="httpContext"></param>
+        /// <param name="problemDetailsService"></param>
         public async Task InvokeAsync(HttpContext httpContext, IProblemDetailsService problemDetailsService)
         {
             try
@@ -27,6 +35,9 @@ namespace YAP_middle_csharp.Middleware
             }
         }
 
+        /// <summary>
+        /// Метод обработки ошибки, для вывода в единый формат
+        /// </summary>
         private async Task HandleException(HttpContext httpContext, Exception ex, IProblemDetailsService problemDetailsService)
         {
             _logger.LogError(
