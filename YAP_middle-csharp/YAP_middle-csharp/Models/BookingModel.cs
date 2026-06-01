@@ -11,7 +11,6 @@ namespace YAP_middle_csharp.Models
         public required Guid EventId { get; set; }
         public required BookingStatusEnum Status { get; set; }
 
-
         private DateTimeOffset _createdAt; 
         public required DateTime CreatedAt 
         {
@@ -32,10 +31,12 @@ namespace YAP_middle_csharp.Models
                 : null;
         }
 
+        public EventModel Event { get; set; } = null!;
+
 
 
         [SetsRequiredMembers]
-        public BookingModel()
+        private BookingModel()
         {
             Id = Guid.NewGuid();
             Status = BookingStatusEnum.Pending;
