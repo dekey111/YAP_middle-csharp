@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 using YAP_middle_csharp.Exceptions;
 using YAP_middle_csharp.Interfaces.IRepositories;
 using YAP_middle_csharp.Interfaces.IServices;
@@ -60,8 +61,8 @@ namespace YAP_middle_csharp.Services
             {
                 query = query.Where(x => x.EndAt.Date <= to.Value.Date);
             }
-            var totalCount = query.Count();
-            var resultQuery = query.OrderByDescending(x => x.EndAt).Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            var totalCount = await query.CountAsync();
+            var resultQuery = await query.OrderByDescending(x => x.EndAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
             var result = new PaginatedResult<EventModel>
             {
@@ -138,9 +139,16 @@ namespace YAP_middle_csharp.Services
                 throw new NotFoundExceptionApp("Event не найден!");
             }
 
+            findEvent.Title = entity.Title;
+            findEvent.Description = entity.Description;
+            findEvent.TotalSeats = entity.TotalSeats;
+            findEvent.AvailableSeats = entity.AvailableSeats;
+            findEvent.StartAt = entity.StartAt;
+            findEvent.EndAt = entity.EndAt;
+
             _logger.LogDebug("[EventService] [Update] Попытка обновления Event. entity = {@entity} ", findEvent);
 
-            await _repository.UpdateAsync(entity);
+            await _repository.UpdateAsync(findEvent);
 
             _logger.LogInformation("[EventService] [Update] Event обновлён. Новые данные: entity = {@entity} ", entity);
 

@@ -92,6 +92,7 @@ namespace YAP_middle_csharp.Controllers
 
             var eventModel = new EventModel()
             {
+                Id = Guid.NewGuid(),
                 Title = eventRequest.Title,
                 Description = eventRequest.Description,
                 TotalSeats = eventRequest.TotalSeats ?? 0,
@@ -130,7 +131,16 @@ namespace YAP_middle_csharp.Controllers
         {
             _logger.LogInformation("[EventsController] [AddBookingByEventId] Запрос на бронирование события {EventId}", eventId);
             var newBooking = await _bookingService.CreateBookingAsync(eventId);
-            return AcceptedAtAction("GetBooking", "Booking", new { id = newBooking.Id }, newBooking);
+            var bookingResponse = new
+            {
+                id = newBooking.Id,
+                eventId = newBooking.EventId,
+                status = newBooking.Status.ToString(),
+                createdAt = newBooking.CreatedAt,
+                processedAt = newBooking.ProcessedAt
+            };
+
+            return AcceptedAtAction("GetBookingAsync", "Booking", new { id = newBooking.Id }, bookingResponse);
         }
 
         /// <summary>

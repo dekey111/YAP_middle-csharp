@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 using YAP_middle_csharp.Exceptions;
 using YAP_middle_csharp.Interfaces.IRepositories;
 using YAP_middle_csharp.Interfaces.IServices;
@@ -73,8 +74,8 @@ namespace YAP_middle_csharp.Services
             {
                 query = query.Where(x => x.ProcessedAt != null && x.ProcessedAt.Value.Date == to.Value.Date);
             }
-            var totalCount = query.Count();
-            var resultQuery = query.OrderByDescending(x => x.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            var totalCount = await query.CountAsync();
+            var resultQuery = await query.OrderByDescending(x => x.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
             var result = new PaginatedResult<BookingModel>
             {
@@ -167,6 +168,7 @@ namespace YAP_middle_csharp.Services
                     _logger.LogWarning("[BookingService] [CreateBookingAsync] Срок регистрации на событие истек {EventId}", eventId);
                     throw new ValidationExceptionApp("Срок регистрации на событие истек");
                 }
+
                 bool hasSeat = findEvent.TryReserveSeats(1);
                 if (!hasSeat)
                 {
@@ -174,14 +176,16 @@ namespace YAP_middle_csharp.Services
                     throw new NoAvailableSeatsExceptionApp("Недостаточно мест на событие");
                 }
 
-                var newBooking = new BookingModel { EventId = eventId };
+                var newBooking = new BookingModel(eventId);
+
                 await _repository.CreateAsync(newBooking);
+
                 _logger.LogInformation("[BookingService] [CreateBookingAsync] Бронь создана: {Id}", newBooking.Id);
                 return newBooking;
             }
-            catch
+            catch (Exception ex)
             {
-                _logger.LogWarning("[BookingService] [CreateBookingAsync] Произошла необработанная ошибка");
+                _logger.LogWarning(ex, "[BookingService] [CreateBookingAsync] Произошла ошибка при бронировании");
                 throw;
             }
             finally
@@ -209,17 +213,18 @@ namespace YAP_middle_csharp.Services
             if (findBooking is null)
             {
                 _logger.LogError("[BookingService] [Update] Ошибка Update. Booking с ID: {id}, не найдено!", entity.Id);
-                throw new NotFoundExceptionApp("Event не найден!");
+                throw new NotFoundExceptionApp("Booking не найден!");
             }
 
-            _logger.LogDebug("[BookingService] [Update] Попытка обновления Booking. entity = {@entity} ", findBooking);
+            findBooking.Status = entity.Status;
+            findBooking.ProcessedAt = entity.ProcessedAt;
 
-            await _repository.UpdateAsync(entity);
+            await _repository.UpdateAsync(findBooking);
 
-            _logger.LogInformation("[BookingService] [Update] Booking обновлён. Новые данные: entity = {@entity} ", entity);
-
-            return entity;
+            _logger.LogInformation("[BookingService] [Update] Booking обновлён. id={id}", entity.Id);
+            return findBooking;
         }
+
 
         /// <summary>
         /// Метод удаления брони

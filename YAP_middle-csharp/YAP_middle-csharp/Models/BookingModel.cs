@@ -38,7 +38,13 @@ namespace YAP_middle_csharp.Models
         [SetsRequiredMembers]
         private BookingModel()
         {
+        }
+
+        [SetsRequiredMembers]
+        public BookingModel(Guid eventId)
+        {
             Id = Guid.NewGuid();
+            EventId = eventId;
             Status = BookingStatusEnum.Pending;
             CreatedAt = DateTime.UtcNow;
         }
