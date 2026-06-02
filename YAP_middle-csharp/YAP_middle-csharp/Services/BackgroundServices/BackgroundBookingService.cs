@@ -10,12 +10,11 @@ namespace YAP_middle_csharp.Services.BackgroundServices
     /// <param name="serviceProvider">Принимает провайдер, чтобы найти BookingRepository</param>
     /// <param name="logger">Принимает логгер</param>
     public class BackgroundBookingService(
-        IServiceProvider serviceProvider,
+        IServiceScopeFactory serviceProvider,
         ILogger<BackgroundBookingService> logger) : BackgroundService
     {
-        private readonly IServiceProvider _serviceProvider = serviceProvider;
+        private readonly IServiceScopeFactory _serviceProvider = serviceProvider;
         private readonly ILogger<BackgroundBookingService> _logger = logger;
-        private readonly SemaphoreSlim _processingSemaphore = new(1, 1);
 
 
         /// <summary>
@@ -31,15 +30,18 @@ namespace YAP_middle_csharp.Services.BackgroundServices
             {
                 try
                 {
+                    List<Guid> pendingBooksIds = new();
                     using (var scope = _serviceProvider.CreateScope())
                     {
                         var repository = scope.ServiceProvider.GetRequiredService<IBookingRepository>();
-                        var pendingBooks = (await repository.FindPendingBookingsAsync()).ToList();
-                        if(pendingBooks.Any())
-                        {
-                            var tasks = pendingBooks.Select(booking => ProcessBookingAsync(booking, stoppingToken));
-                            await Task.WhenAll(tasks);
-                        }
+                        var pendingBooks = await repository.FindPendingBookingsAsync();
+                        pendingBooksIds = pendingBooks.Select(x => x.Id).ToList();
+                    }
+
+                    if (pendingBooksIds.Any())
+                    {
+                        var tasks = pendingBooksIds.Select(id => ProcessBookingAsync(id, stoppingToken));
+                        await Task.WhenAll(tasks);
                     }
                 }
                 catch (OperationCanceledException)
@@ -61,7 +63,7 @@ namespace YAP_middle_csharp.Services.BackgroundServices
         /// <param name="booking">Сущность бронирования</param>
         /// <param name="stoppingToken"></param>
         /// <returns></returns>
-        private async Task ProcessBookingAsync(BookingModel booking, CancellationToken stoppingToken)
+        private async Task ProcessBookingAsync(Guid pendingBookId, CancellationToken stoppingToken)
         {
             await Task.Delay(2000, stoppingToken);
             using (var scope = _serviceProvider.CreateScope())
@@ -69,16 +71,21 @@ namespace YAP_middle_csharp.Services.BackgroundServices
                 var bookingRepository = scope.ServiceProvider.GetRequiredService<IBookingRepository>();
                 var eventService = scope.ServiceProvider.GetRequiredService<IEventService>();
 
-                await _processingSemaphore.WaitAsync(stoppingToken);
                 EventModel? findEvent = null;
+                BookingModel? booking = null;
 
                 try
                 {
-                    _logger.LogInformation("[BackgroundBookingService] Взяли в работу ID: {idBook}", booking.Id);
+                    booking = await bookingRepository.FindByIdAsync(pendingBookId);
+                    if(booking == null || booking.Status != BookingStatusEnum.Pending)
+                        return;
+                    
+
+                    _logger.LogInformation("[BackgroundBookingService] Взяли в работу ID: {idBook}", pendingBookId);
                     findEvent = await eventService.FindByIdAsync(booking.EventId);
                     if (findEvent == null)
                     {
-                        _logger.LogWarning("[BackgroundBookingService] Событие {EventId} не найдено для брони {BookingId}. Отклонение.", booking.EventId, booking.Id);
+                        _logger.LogWarning("[BackgroundBookingService] Событие {EventId} не найдено для брони {BookingId}. Отклонение.", booking.EventId, pendingBookId);
 
                         booking.Status = BookingStatusEnum.Rejected;
                         booking.ProcessedAt = DateTime.UtcNow;
@@ -96,29 +103,28 @@ namespace YAP_middle_csharp.Services.BackgroundServices
                 }
                 catch (OperationCanceledException)
                 {
-                    _logger.LogDebug("[BackgroundBookingService] Обработка брони {Id} отменена.", booking.Id);
+                    _logger.LogDebug("[BackgroundBookingService] Обработка брони {Id} отменена.", pendingBookId);
                 }
                 catch
                 {
-                    booking.Status = BookingStatusEnum.Rejected;
-                    booking.ProcessedAt = DateTime.UtcNow;
-                    await bookingRepository.UpdateAsync(booking);
-
-                    if (findEvent == null)
+                    if (booking != null)
                     {
-                        findEvent = await eventService.FindByIdAsync(booking.EventId);
-                    }
+                        booking.Status = BookingStatusEnum.Rejected;
+                        booking.ProcessedAt = DateTime.UtcNow;
+                        await bookingRepository.UpdateAsync(booking);
 
-                    if (findEvent != null)
-                    {
-                        findEvent.ReleaseSeats(1);
-                        await eventService.UpdateAsync(findEvent);
+                        if (findEvent == null)
+                        {
+                            findEvent = await eventService.FindByIdAsync(booking.EventId);
+                        }
+
+                        if (findEvent != null)
+                        {
+                            findEvent.ReleaseSeats(1);
+                            await eventService.UpdateAsync(findEvent);
+                        }
                     }
                     throw;
-                }
-                finally
-                {
-                    _processingSemaphore.Release();
                 }
             }
         }
