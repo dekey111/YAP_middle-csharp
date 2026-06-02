@@ -1,9 +1,13 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Net;
 using System.Reflection;
+using YAP_middle_csharp.DataAccess;
 using YAP_middle_csharp.Exceptions;
 using YAP_middle_csharp.Interfaces.IRepositories;
+using YAP_middle_csharp.Interfaces.IServices;
 using YAP_middle_csharp.Models;
 using YAP_middle_csharp.Repository;
 using YAP_middle_csharp.Services;
@@ -13,15 +17,28 @@ namespace YAP_middle_csharp.Tests
 {
     public class EventsServiceTests
     {
-        private readonly EventService _eventService;
+        private readonly IEventService _eventService;
         private readonly EventValidator _validator;
+        private readonly ServiceProvider _serviceProvider;
 
         public EventsServiceTests()
         {
-            var repository = new EventRepository();
-            var logger = new NullLogger<EventService>();
+            var dbName = Guid.NewGuid().ToString();
+            var services = new ServiceCollection();
 
-            _eventService = new EventService(repository, logger);
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseInMemoryDatabase(dbName));
+
+            services.AddLogging();
+
+            services.AddScoped<IEventRepository, EventRepository>();
+            services.AddScoped<IEventService, EventService>();
+
+            _serviceProvider = services.BuildServiceProvider();
+
+            var scope = _serviceProvider.CreateScope();
+            _eventService = scope.ServiceProvider.GetRequiredService<IEventService>();
+
             _validator = new EventValidator();
         }
 
@@ -31,6 +48,7 @@ namespace YAP_middle_csharp.Tests
         {
             var newEvent = new EventModel 
             {
+                Id = Guid.NewGuid(),
                 TotalSeats = 2,
                 Title = "Хакатон", 
                 StartAt = DateTime.UtcNow, 
@@ -134,6 +152,7 @@ namespace YAP_middle_csharp.Tests
 
             var newEvent_BackToFeature = new EventModel
             {
+                Id = Guid.NewGuid(),
                 TotalSeats = 2,
                 Title = "Назад в будущее!",
                 StartAt = today.AddDays(-5),
@@ -143,6 +162,7 @@ namespace YAP_middle_csharp.Tests
 
             var newEvent_LetGoToPast = new EventModel
             {
+                Id = Guid.NewGuid(),
                 TotalSeats = 2,
                 Title = "Вперед в прошлое!",
                 StartAt = today.AddDays(5),
@@ -162,6 +182,7 @@ namespace YAP_middle_csharp.Tests
                 await _eventService.CreateAsync(
                     new EventModel 
                     {
+                        Id = Guid.NewGuid(),
                         TotalSeats = 2,
                         Title = $"Я мистер мисикс: {i}, посмотрите на меня!",
                         StartAt = DateTime.UtcNow, 
@@ -177,8 +198,8 @@ namespace YAP_middle_csharp.Tests
         public async Task CombinedFilter_ReturnsMatchingEvents()
         {
             var start = new DateTime(2025, 1, 1);
-            await _eventService.CreateAsync(new EventModel { TotalSeats = 2, Title = "Совместное", StartAt = start, EndAt = start });
-            await _eventService.CreateAsync(new EventModel { TotalSeats = 2, Title = "Одиночное", StartAt = start, EndAt = start });
+            await _eventService.CreateAsync(new EventModel { Id = Guid.NewGuid(), TotalSeats = 2, Title = "Совместное", StartAt = start, EndAt = start });
+            await _eventService.CreateAsync(new EventModel { Id = Guid.NewGuid(), TotalSeats = 2, Title = "Одиночное", StartAt = start, EndAt = start });
 
             var result = await _eventService.FindAllAsync(title: "Совместное", from: start, to: start);
             Assert.Single(result.Items);
