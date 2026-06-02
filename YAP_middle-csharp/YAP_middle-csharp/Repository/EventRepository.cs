@@ -1,4 +1,6 @@
-﻿using YAP_middle_csharp.Interfaces.IRepositories;
+﻿using Microsoft.EntityFrameworkCore;
+using YAP_middle_csharp.DataAccess;
+using YAP_middle_csharp.Interfaces.IRepositories;
 using YAP_middle_csharp.Models;
 
 namespace YAP_middle_csharp.Repository
@@ -7,23 +9,16 @@ namespace YAP_middle_csharp.Repository
     /// <summary>
     /// Реализация работы с БД событий
     /// </summary>
-    public class EventRepository : IEventRepository
+    public class EventRepository(AppDbContext context) : IEventRepository
     {
-        private readonly List<EventModel> _eventList = new();
-
-        //public Task<IEnumerable<EventModel>> FindAll()
-        //{
-        //    return Task.FromResult(_eventList.AsReadOnly() as IEnumerable<EventModel>);
-        //}
-
-
+        private readonly AppDbContext _context = context;
         /// <summary>
         /// Метод-заготовка для получения данных с фильтрацией на стороне БД
         /// </summary>
         /// <returns></returns>
         public Task<IQueryable<EventModel>> StartQueryToFindAllAsync()
         {
-            return Task.FromResult(_eventList.AsQueryable());
+            return Task.FromResult(_context.Events.AsQueryable());
         }
 
         /// <summary>
@@ -31,9 +26,9 @@ namespace YAP_middle_csharp.Repository
         /// </summary>
         /// <param name="id">УИ события</param>
         /// <returns>Сущность события</returns>
-        public Task<EventModel?> FindByIdAsync(Guid id)
+        public async Task<EventModel?> FindByIdAsync(Guid id)
         {
-            return Task.FromResult(_eventList.FirstOrDefault(x => x.Id == id));
+            return await _context.Events.FirstOrDefaultAsync(x => x.Id == id);
         }
 
         /// <summary>
@@ -41,11 +36,10 @@ namespace YAP_middle_csharp.Repository
         /// </summary>
         /// <param name="item">Сущность события</param>
         /// <returns>Сущность события</returns>
-        public Task CreateAsync(EventModel item)
+        public async Task CreateAsync(EventModel item)
         {
-            item.Id = Guid.NewGuid();
-            _eventList.Add(item);
-            return Task.CompletedTask;
+            _context.Events.Add(item);
+            await _context.SaveChangesAsync();
         }
 
         /// <summary>
@@ -53,12 +47,10 @@ namespace YAP_middle_csharp.Repository
         /// </summary>
         /// <param name="item">Сущность события</param>
         /// <returns></returns>
-        public Task UpdateAsync(EventModel item)
+        public async Task UpdateAsync(EventModel item)
         {
-            var index = _eventList.FindIndex(x => x.Id == item.Id);
-            if (index != -1) 
-                _eventList[index] = item;
-            return Task.CompletedTask;
+            _context.Events.Update(item);
+            await _context.SaveChangesAsync();
         }
 
         /// <summary>
@@ -66,10 +58,10 @@ namespace YAP_middle_csharp.Repository
         /// </summary>
         /// <param name="item">Сущность события</param>
         /// <returns></returns>
-        public Task DeleteAsync(EventModel item)
+        public async Task DeleteAsync(EventModel item)
         {
-            _eventList.Remove(item);
-            return Task.CompletedTask;
+            _context.Events.Remove(item);
+            await _context.SaveChangesAsync();
         }
     }
 }

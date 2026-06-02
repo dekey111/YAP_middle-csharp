@@ -1,10 +1,12 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using YAP_middle_csharp.DataAccess;
 using YAP_middle_csharp.Exceptions;
 using YAP_middle_csharp.Interfaces.IRepositories;
 using YAP_middle_csharp.Interfaces.IServices;
@@ -19,20 +21,30 @@ namespace YAP_middle_csharp.Tests
 {
     public class BookingServiceTest
     {
-        private readonly BookingService _bookingService;
-        private readonly EventService _eventService;
+        private readonly ServiceProvider _serviceProvider;
+        private readonly IBookingService _bookingService;
+        private readonly IEventService _eventService;
 
         public BookingServiceTest()
         {
-            var bookingRepository = new BookingRepository();
-            var bookingLogger = new NullLogger<BookingService>();
+            var dbName = Guid.NewGuid().ToString();
+            var services = new ServiceCollection();
 
-            var eventRepository = new EventRepository();
-            var eventLogger = new NullLogger<EventService>();
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseInMemoryDatabase(dbName));
 
-            _eventService = new EventService(eventRepository, eventLogger);
+            services.AddLogging();
 
-            _bookingService = new BookingService(bookingRepository, bookingLogger, _eventService);
+            services.AddScoped<IEventRepository, EventRepository>();
+            services.AddScoped<IEventService, EventService>();
+            services.AddScoped<IBookingRepository, BookingRepository>();
+            services.AddScoped<IBookingService, BookingService>();
+
+            _serviceProvider = services.BuildServiceProvider();
+
+            var scope = _serviceProvider.CreateScope();
+            _eventService = scope.ServiceProvider.GetRequiredService<IEventService>();
+            _bookingService = scope.ServiceProvider.GetRequiredService<IBookingService>();
         }
 
         #region Успешные
@@ -121,45 +133,35 @@ namespace YAP_middle_csharp.Tests
         [Fact]
         public async Task BackgroundService_IndependentTest_ShouldConfirm()
         {
-            var bookingRepository = new BookingRepository();
-            var eventRepository = new EventRepository();
-            var localEventService = new EventService(eventRepository, new NullLogger<EventService>());
-
-            var localBookingService = new BookingService(bookingRepository, new NullLogger<BookingService>(), localEventService);
+            using var setupScope = _serviceProvider.CreateScope();
+            var localEventService = setupScope.ServiceProvider.GetRequiredService<IEventService>();
+            var localBookingService = setupScope.ServiceProvider.GetRequiredService<IBookingService>();
 
             var newEvent = new EventModel
             {
-                Title = "Тестовое событие",
+                Title = "Крутое тестовое событие",
                 TotalSeats = 2,
-                AvailableSeats = 2, 
+                AvailableSeats = 2,
                 StartAt = DateTime.UtcNow,
                 EndAt = DateTime.UtcNow.AddDays(1)
             };
             var eventId = await localEventService.CreateAsync(newEvent);
-
             var booking = await localBookingService.CreateBookingAsync(eventId);
 
-            var serviceProviderMock = new Mock<IServiceProvider>();
-            var scopeMock = new Mock<IServiceScope>();
-            var scopeFactoryMock = new Mock<IServiceScopeFactory>();
-
-            serviceProviderMock.Setup(s => s.GetService(typeof(IServiceScopeFactory))).Returns(scopeFactoryMock.Object);
-            scopeFactoryMock.Setup(f => f.CreateScope()).Returns(scopeMock.Object);
-
-            scopeMock.Setup(s => s.ServiceProvider.GetService(typeof(IBookingRepository))).Returns(bookingRepository);
-            scopeMock.Setup(s => s.ServiceProvider.GetService(typeof(IEventService))).Returns(localEventService);
-
-            var bgService = new BackgroundBookingService(serviceProviderMock.Object, new NullLogger<BackgroundBookingService>());
+            var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
+            var bgService = new BackgroundBookingService(scopeFactory, new NullLogger<BackgroundBookingService>());
 
             using var cts = new CancellationTokenSource();
             var runTask = bgService.StartAsync(cts.Token);
 
-            await Task.Delay(3500);
+            await Task.Delay(4500);
 
             cts.Cancel();
             try { await runTask; } catch (OperationCanceledException) { }
 
-            var result = await localBookingService.FindByIdAsync(booking.Id);
+            using var assertScope = _serviceProvider.CreateScope();
+            var assertBookingService = assertScope.ServiceProvider.GetRequiredService<IBookingService>();
+            var result = await assertBookingService.FindByIdAsync(booking.Id);
 
             Assert.NotNull(result);
             Assert.Equal(BookingStatusEnum.Confirmed, result.Status);
@@ -250,7 +252,7 @@ namespace YAP_middle_csharp.Tests
         [Fact]
         public void BookingAfterConfirm_ReturnsConfirmedAndProcessedAt()
         {
-            var booking = new BookingModel();
+            var booking = new BookingModel(Guid.NewGuid());
 
             booking.Status = BookingStatusEnum.Confirmed;
             booking.ProcessedAt = DateTime.UtcNow;
@@ -265,7 +267,7 @@ namespace YAP_middle_csharp.Tests
         [Fact]
         public void Booking_AfterReject_ReturnsRejectedAndProcessedAt()
         {
-            var booking = new BookingModel();
+            var booking = new BookingModel(Guid.NewGuid());
 
             booking.Status = BookingStatusEnum.Rejected;
             booking.ProcessedAt = DateTime.UtcNow;
@@ -336,6 +338,7 @@ namespace YAP_middle_csharp.Tests
         {
             var newEvent = new EventModel
             {
+                Id = Guid.NewGuid(),
                 TotalSeats = 5,
                 AvailableSeats = 5,
                 Title = "Какой то суперский Ивент",
@@ -345,34 +348,35 @@ namespace YAP_middle_csharp.Tests
             var id = await _eventService.CreateAsync(newEvent);
 
             int totalRequests = 20;
-            var tasks = new List<Task<BookingModel>>();
+            var successfulBookingsCount = 0;
+            var exceptionCount = 0;
 
-            for (int i = 0; i < totalRequests; i++)
+            var tasks = Enumerable.Range(0, totalRequests).Select(_ => Task.Run(async () =>
             {
-                tasks.Add(_bookingService.CreateBookingAsync(id));
-            }
+                using var scope = _serviceProvider.CreateScope();
+                var scopedBookingService = scope.ServiceProvider.GetRequiredService<IBookingService>();
 
-            int successfulBookingsCount = 0;
-            int exceptionCount = 0;
-
-            foreach (var task in tasks)
-            {
                 try
                 {
-                    var result = await task;
-                    if (result != null) successfulBookingsCount++;
+                    await scopedBookingService.CreateBookingAsync(id);
+                    Interlocked.Increment(ref successfulBookingsCount);
                 }
                 catch (NoAvailableSeatsExceptionApp)
                 {
-                    exceptionCount++;
+                    Interlocked.Increment(ref exceptionCount);
                 }
-            }
+            }));
 
-            var updatedEvent = await _eventService.FindByIdAsync(id);
+            await Task.WhenAll(tasks);
 
-            Assert.Equal(5, successfulBookingsCount);   
-            Assert.Equal(15, exceptionCount);          
-            Assert.Equal(0, updatedEvent?.AvailableSeats); 
+            using var assertScope = _serviceProvider.CreateScope();
+            var assertEventService = assertScope.ServiceProvider.GetRequiredService<IEventService>();
+
+            var updatedEvent = await assertEventService.FindByIdAsync(id);
+
+            Assert.Equal(5, successfulBookingsCount);
+            Assert.Equal(15, exceptionCount);
+            Assert.Equal(0, updatedEvent?.AvailableSeats);
         }
 
         /// <summary>
@@ -393,13 +397,13 @@ namespace YAP_middle_csharp.Tests
             };
             var id = await _eventService.CreateAsync(newEvent);
 
-            var tasks = new List<Task<BookingModel>>();
-
-            // 10 одновременных запросов
-            for (int i = 0; i < newEvent.TotalSeats; i++)
+            var tasks = Enumerable.Range(0, 10).Select(_ => Task.Run(async () =>
             {
-                tasks.Add(_bookingService.CreateBookingAsync(id));
-            }
+                using var scope = _serviceProvider.CreateScope();
+                var scopedBookingService = scope.ServiceProvider.GetRequiredService<IBookingService>();
+
+                return await scopedBookingService.CreateBookingAsync(id);
+            }));
 
             var results = await Task.WhenAll(tasks);
 

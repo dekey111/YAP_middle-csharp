@@ -43,6 +43,7 @@ namespace YAP_middle_csharp.Models
                           : value.ToUniversalTime();
         }
 
+        public List<BookingModel> Bookings { get; set; } = null!;
 
         public bool TryReserveSeats(int count = 1)
         {

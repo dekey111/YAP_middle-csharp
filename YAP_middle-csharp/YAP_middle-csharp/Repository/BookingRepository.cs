@@ -1,4 +1,6 @@
-﻿using YAP_middle_csharp.Interfaces.IRepositories;
+﻿using Microsoft.EntityFrameworkCore;
+using YAP_middle_csharp.DataAccess;
+using YAP_middle_csharp.Interfaces.IRepositories;
 using YAP_middle_csharp.Models;
 
 namespace YAP_middle_csharp.Repository
@@ -6,26 +8,27 @@ namespace YAP_middle_csharp.Repository
     /// <summary>
     /// Реализация работы с БД бронирований
     /// </summary>
-    public class BookingRepository : IBookingRepository
+    public class BookingRepository(AppDbContext context) : IBookingRepository
     {
-        private readonly List<BookingModel> _bookList = new();
-
+        private readonly AppDbContext _context = context;
         /// <summary>
         /// Метод-заготовка для получения данных с фильтрацией на стороне БД
         /// </summary>
         /// <returns></returns>
         public Task<IQueryable<BookingModel>> StartQueryToFindAllAsync()
         {
-            return Task.FromResult(_bookList.AsQueryable());
+            return Task.FromResult(_context.Bookings.AsQueryable());
         }
 
         /// <summary>
         /// Метод для нахождения необработанных броней
         /// </summary>
         /// <returns></returns>
-        public Task<IEnumerable<BookingModel>> FindPendingBookingsAsync()
+        public async Task<IEnumerable<BookingModel>> FindPendingBookingsAsync()
         {
-            return Task.FromResult(_bookList.Where(x => x.Status == BookingStatusEnum.Pending));
+            return await _context.Bookings
+                .Where(x => x.Status == BookingStatusEnum.Pending)
+                .ToListAsync();
         }
 
         /// <summary>
@@ -33,9 +36,9 @@ namespace YAP_middle_csharp.Repository
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public Task<BookingModel?> FindByIdAsync(Guid id)
+        public async Task<BookingModel?> FindByIdAsync(Guid id)
         {
-            return Task.FromResult(_bookList.FirstOrDefault(x => x.Id == id));
+            return await _context.Bookings.FirstOrDefaultAsync(x => x.Id == id);
         }
 
         /// <summary>
@@ -43,37 +46,30 @@ namespace YAP_middle_csharp.Repository
         /// </summary>
         /// <param name="entity">Сущность бронирования</param>
         /// <returns>Сущность бронирования</returns>
-        public Task CreateAsync(BookingModel entity)
+        public async Task CreateAsync(BookingModel entity)
         {
-            entity.Id = Guid.NewGuid();
-            _bookList.Add(entity);
-            return Task.CompletedTask;
+            _context.Bookings.Add(entity);
+            await _context.SaveChangesAsync();
         }
 
         /// <summary>
         /// Метод обновления бронирования
         /// </summary>
         /// <param name="entity">Сущность бронирования</param>
-        /// <returns>Сущность бронирования</returns>
-        public Task UpdateAsync(BookingModel entity)
+        public async Task UpdateAsync(BookingModel entity)
         {
-            var findIndex = _bookList.FindIndex(x => x.Id == entity.Id);
-            if (findIndex != -1)
-                _bookList[findIndex] = entity;
-            return Task.CompletedTask;
+            _context.Bookings.Update(entity);
+            await _context.SaveChangesAsync();
         }
 
         /// <summary>
         /// Метод удаления бронирования
         /// </summary>
         /// <param name="entity">Сущность бронирования</param>
-        /// <returns></returns>
-        public Task DeleteAsync(BookingModel entity)
+        public async Task DeleteAsync(BookingModel entity)
         {
-            _bookList.Remove(entity);
-            return Task.CompletedTask;
+            _context.Bookings.Remove(entity);
+            await _context.SaveChangesAsync();
         }
-
-
     }
 }
