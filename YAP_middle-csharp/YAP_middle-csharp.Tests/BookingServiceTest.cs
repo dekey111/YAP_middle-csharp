@@ -9,6 +9,7 @@ using System.Text;
 using YAP_middle_csharp.Application.Interfaces.IServices;
 using YAP_middle_csharp.DataAccess;
 using YAP_middle_csharp.Exceptions;
+using YAP_middle_csharp.Interfaces;
 using YAP_middle_csharp.Interfaces.IRepositories;
 using YAP_middle_csharp.Models;
 using YAP_middle_csharp.Repository;
@@ -34,6 +35,7 @@ namespace YAP_middle_csharp.Tests
                 options.UseInMemoryDatabase(dbName));
 
             services.AddLogging();
+            services.AddTransient<IValidator<EventModel>, EventValidator>();
 
             services.AddScoped<IEventRepository, EventRepository>();
             services.AddScoped<IEventService, EventService>();

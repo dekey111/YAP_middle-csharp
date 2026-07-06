@@ -17,7 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\YAP_middle-csharp\YAP_middle-csharp.csproj" />
+    <ProjectReference Include="..\YAP_middle-csharp.Application\YAP_middle-csharp.Application.csproj" />
+    <ProjectReference Include="..\YAP_middle-csharp.Infrastructure\YAP_middle-csharp.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

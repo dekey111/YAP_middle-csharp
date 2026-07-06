@@ -29,7 +29,7 @@ namespace YAP_middle_csharp.Repository
 
             if (!string.IsNullOrEmpty(title))
             {
-                query = query.Where(x => x.Title.Trim().Contains(title, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(x => x.Title.Contains(title));
             }
             if (from.HasValue)
             {
