@@ -1,5 +1,5 @@
-﻿using YAP_middle_csharp.Interfaces.IRepositories;
-using YAP_middle_csharp.Interfaces.IServices;
+﻿using YAP_middle_csharp.Application.Interfaces.IServices;
+using YAP_middle_csharp.Interfaces.IRepositories;
 using YAP_middle_csharp.Models;
 
 namespace YAP_middle_csharp.Services.BackgroundServices

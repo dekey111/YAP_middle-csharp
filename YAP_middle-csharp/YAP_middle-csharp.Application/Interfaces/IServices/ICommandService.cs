@@ -1,6 +1,6 @@
 ﻿using System.Security.Principal;
 
-namespace YAP_middle_csharp.Interfaces.IServices
+namespace YAP_middle_csharp.Application.Interfaces.IServices
 {
     /// <summary>
     /// Интерфейс сервиса для изменения данных 

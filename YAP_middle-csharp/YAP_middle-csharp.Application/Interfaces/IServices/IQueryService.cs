@@ -1,6 +1,6 @@
 ﻿using YAP_middle_csharp.Models;
 
-namespace YAP_middle_csharp.Interfaces.IServices
+namespace YAP_middle_csharp.Application.Interfaces.IServices
 {
     /// <summary>
     /// Интерфейс сервиса для чтения сущностей
