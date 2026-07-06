@@ -5,5 +5,5 @@
     /// </summary>
     /// <param name="message">Принимает сообщение из сущности ошибки</param>
     public class NoAvailableSeatsExceptionApp(string message)
-        : BaseApiException(message, StatusCodes.Status409Conflict, "No available seats for this event");
+        : BaseApiException(message, 409, "No available seats for this event");
 }

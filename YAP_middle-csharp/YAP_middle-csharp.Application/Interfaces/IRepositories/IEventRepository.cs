@@ -1,5 +1,4 @@
 ﻿using YAP_middle_csharp.Models;
-using YAP_middle_csharp.Repository;
 
 namespace YAP_middle_csharp.Interfaces.IRepositories
 {
@@ -8,5 +7,6 @@ namespace YAP_middle_csharp.Interfaces.IRepositories
     /// </summary>
     public interface IEventRepository : IGenericRepository<EventModel>
     {
+        Task<PaginatedResult<EventModel>> GetPagedAsync(string? title, DateTime? from, DateTime? to, int page, int pageSize);
     }
 }

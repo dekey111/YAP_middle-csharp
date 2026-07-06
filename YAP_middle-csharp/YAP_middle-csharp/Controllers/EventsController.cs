@@ -4,7 +4,6 @@ using YAP_middle_csharp.Application.Interfaces.IServices;
 using YAP_middle_csharp.Exceptions;
 using YAP_middle_csharp.Interfaces;
 using YAP_middle_csharp.Models;
-using YAP_middle_csharp.Services;
 
 namespace YAP_middle_csharp.Controllers
 {
@@ -12,12 +11,10 @@ namespace YAP_middle_csharp.Controllers
     [Route("api/[controller]")]
     [Produces("application/json")]
     public class EventsController(IEventService eventService,
-        IValidator<EventModel> validator,
         IBookingService bookingService,
         ILogger<BookingController> logger) : ControllerBase
     {
         private readonly IEventService _eventService = eventService;
-        private readonly IValidator<EventModel> _validator = validator;
         private readonly IBookingService _bookingService = bookingService;
         private readonly ILogger<BookingController> _logger = logger;
 
@@ -90,27 +87,10 @@ namespace YAP_middle_csharp.Controllers
         {
             _logger.LogDebug("[EventsController] [AddEvent] Запрос на добавление нового события");
 
-            var eventModel = new EventModel()
-            {
-                Id = Guid.NewGuid(),
-                Title = eventRequest.Title,
-                Description = eventRequest.Description,
-                TotalSeats = eventRequest.TotalSeats ?? 0,
-                AvailableSeats = eventRequest.TotalSeats ?? 0,
-                StartAt = eventRequest.StartAt,
-                EndAt = eventRequest.EndAt
-            };
-            
-            var errors = _validator.GetErrors(eventModel).ToList();
-            if (errors.Any())
-            {
-                _logger.LogDebug(string.Join("; ", errors), "[EventsController] [AddEvent]");
-                throw new ValidationExceptionApp(string.Join("; ", errors));
-            }
+            var createdEvent = await _eventService.CreateAsync(eventRequest);
+            var newEventResponse = new EventResponse(createdEvent);
 
-            var newIdEvent = await _eventService.CreateAsync(eventModel);
-            var newEvent = new EventResponse(eventModel);
-            return CreatedAtAction(nameof(GetEventByIdAsync), new { id = newIdEvent }, newEvent);
+            return CreatedAtAction(nameof(GetEventByIdAsync), new { id = createdEvent.Id }, newEventResponse);
         }
 
         /// <summary>
@@ -161,31 +141,11 @@ namespace YAP_middle_csharp.Controllers
 
             if (id != eventResponse.Id)
             {
-                _logger.LogWarning("[EventsController] [EditEvent] Проблема в сущности и в запросе. \nПроверьте правильность данных! {EventId}", id);
-                throw new ValidationExceptionApp("Проблема в сущности и в запросе. \nПроверьте правильность данных!");
+                throw new ValidationExceptionApp("Проблема в сущности и в запросе. Проверьте правильность данных!");
             }
 
-            var eventModel = new EventModel()
-            {
-                Id = eventResponse.Id,
-                Title = eventResponse.Title,
-                Description = eventResponse.Description,
-                TotalSeats = eventResponse.TotalSeats,
-                StartAt = eventResponse.StartAt,
-                EndAt = eventResponse.EndAt
-            };
-
-            var errors = _validator.GetErrors(eventModel).ToList();
-            if (errors.Any())
-            {
-                _logger.LogInformation(string.Join("; ", errors), "[EventsController] [EditEvent] {EventId}", id);
-                throw new ValidationExceptionApp(string.Join("; ", errors));
-            }
-
-            var updatedEvent = await _eventService.UpdateAsync(eventModel);
-
-            var returnUpdatedEvent = new EventResponse(updatedEvent);
-            return Ok(returnUpdatedEvent);
+            var updatedEvent = await _eventService.UpdateAsync(eventResponse);
+            return Ok(new EventResponse(updatedEvent));
         }
 
         /// <summary>
@@ -201,15 +161,7 @@ namespace YAP_middle_csharp.Controllers
         {
             _logger.LogInformation("[EventsController] [DeleteEvent] Запрос на удаление события {EventId}", id);
 
-            var findEvent = await _eventService.FindByIdAsync(id);
-
-            if (findEvent is null)
-            {
-                _logger.LogInformation("[EventsController] [DeleteEvent]  Event c id: {id} не найден!", id);
-                throw new NotFoundExceptionApp($"Event c id: {id} не найден!");
-            }
-
-            await _eventService.DeleteAsync(findEvent);
+            await _eventService.DeleteAsync(id);
             return NoContent();
         }
     }

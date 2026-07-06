@@ -73,12 +73,8 @@ namespace EventApi.IntegrationTests
             _context.Events.AddRange(event1, event2, event3);
             await _context.SaveChangesAsync();
 
-            var query = await _repository.StartQueryToFindAllAsync();
-            var filteredAndPaginated = await query
-                .Where(e => e.Title.Contains("C#"))
-                .Skip(0) 
-                .Take(1) 
-                .ToListAsync();
+            var query = await _repository.GetPagedAsync("C#", null, null, 1, 1);
+            var filteredAndPaginated = query.Items;
 
             Assert.Single(filteredAndPaginated);
             Assert.Contains("C#", filteredAndPaginated.First().Title); 

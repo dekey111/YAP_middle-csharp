@@ -7,15 +7,6 @@
     public interface IGenericRepository<T> where T : class
     {
         /// <summary>
-        /// Подготовленный запрос для получения сущности 
-        /// </summary>
-        /// <remarks>
-        /// Метод, который возвращает голый запрос для обработки на стороне БД, с возможностью подкрутить необходимые фильтрации
-        /// </remarks>
-        /// <returns>Возвращает подготовленный шаблон получения данных</returns>
-        Task<IQueryable<T>> StartQueryToFindAllAsync();
-
-        /// <summary>
         /// Поиск записи по идентификатору
         /// </summary>
         /// <param name="id">Уникальный идентификатор</param>

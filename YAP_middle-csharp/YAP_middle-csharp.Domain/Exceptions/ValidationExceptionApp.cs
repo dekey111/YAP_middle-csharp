@@ -5,5 +5,5 @@
     /// </summary>
     /// <param name="message">Принимает сообщение из сущности ошибки</param>
     public class ValidationExceptionApp(string message)
-            : BaseApiException(message, StatusCodes.Status400BadRequest, "Validation Error");
+            : BaseApiException(message, 400, "Validation Error");
 }

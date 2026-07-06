@@ -2,6 +2,7 @@
 using YAP_middle_csharp.DataAccess;
 using YAP_middle_csharp.Interfaces.IRepositories;
 using YAP_middle_csharp.Models;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace YAP_middle_csharp.Repository
 {
@@ -11,13 +12,45 @@ namespace YAP_middle_csharp.Repository
     public class BookingRepository(AppDbContext context) : IBookingRepository
     {
         private readonly AppDbContext _context = context;
+
         /// <summary>
-        /// Метод-заготовка для получения данных с фильтрацией на стороне БД
+        /// Получение записей с пагинацией страниц
         /// </summary>
-        /// <returns></returns>
-        public Task<IQueryable<BookingModel>> StartQueryToFindAllAsync()
+        /// <param name="title">Опциональное поле фильтрации по наименованию</param>
+        /// <param name="from">Опциональное поле фильтрации по не ранее даты</param>
+        /// <param name="to">Опциональное поле фильтрации по не позднее даты</param>
+        /// <param name="page">Опциональное поле для выбора страницы, со значением по умолчанию = 1 </param>
+        /// <param name="pageSize">Опциональное поле для выбора количества выгружаемых строк, со значением по умолчанию = 10</param>
+        /// <returns>Возвращает отформатированный список</returns>
+        public async Task<PaginatedResult<BookingModel>> GetPagedAsync(string? title, DateTime? from, DateTime? to, int page, int pageSize)
         {
-            return Task.FromResult(_context.Bookings.AsQueryable());
+            var query = _context.Bookings.AsQueryable();
+
+            if (!string.IsNullOrEmpty(title))
+            {
+                if (Enum.TryParse<BookingStatusEnum>(title, true, out var statusFilter))
+                {
+                    query = query.Where(x => x.Status == statusFilter);
+                }
+            }
+            if (from.HasValue && from is not null)
+            {
+                query = query.Where(x => x.CreatedAt.Date == from.Value.Date);
+            }
+            if (to.HasValue && to is not null)
+            {
+                query = query.Where(x => x.ProcessedAt != null && x.ProcessedAt.Value.Date == to.Value.Date);
+            }
+            var totalCount = await query.CountAsync();
+            var resultQuery = await query.OrderByDescending(x => x.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+
+            return new PaginatedResult<BookingModel>
+            {
+                Items = resultQuery,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
         /// <summary>
@@ -71,5 +104,7 @@ namespace YAP_middle_csharp.Repository
             _context.Bookings.Remove(entity);
             await _context.SaveChangesAsync();
         }
+
+
     }
 }

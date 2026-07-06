@@ -1,10 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.Extensions.Logging;
 using YAP_middle_csharp.Application.Interfaces.IServices;
 using YAP_middle_csharp.Exceptions;
+using YAP_middle_csharp.Interfaces;
 using YAP_middle_csharp.Interfaces.IRepositories;
 using YAP_middle_csharp.Models;
-using YAP_middle_csharp.Repository;
 
 namespace YAP_middle_csharp.Services
 {
@@ -13,9 +12,10 @@ namespace YAP_middle_csharp.Services
     /// </summary>
     /// <param name="repository">Принимает контракт от репозитория</param>
     /// <param name="logger">Принимает реализацию логирования</param>
-    public class EventService(IEventRepository repository, ILogger<EventService> logger) : IEventService
+    public class EventService(IEventRepository repository, IValidator<EventModel> validator, ILogger<EventService> logger) : IEventService
     {
         private readonly IEventRepository _repository = repository;
+        IValidator<EventModel> _validator = validator;
         private readonly ILogger<EventService> _logger = logger;
 
 
@@ -32,10 +32,10 @@ namespace YAP_middle_csharp.Services
         public async Task<PaginatedResult<EventModel>> FindAllAsync(string? title = null, DateTime? from = null, DateTime? to = null,
             int page = 1, int pageSize = 10)
         {
-            _logger.LogDebug("[EventService] [FindAll] Начало выполнения FindAll: title={Title}, from={From}, to={To}, page ={Page}, pSize={pSize}",
+            _logger.LogDebug("[EventService] [FindAll] Начало выполнения FindAll: title={Title}, from={From}, to={To}, page={Page}, pSize={pSize}",
                 title, from, to, page, pageSize);
 
-            if(page < 1)
+            if (page < 1)
             {
                 _logger.LogWarning("[EventService] [FindAll] Передан некорректный номер страницы: {Page}", page);
                 throw new ValidationExceptionApp("Номер страницы должен быть не менее 1");
@@ -47,32 +47,9 @@ namespace YAP_middle_csharp.Services
                 throw new ValidationExceptionApp("Размер страницы должен быть от 1 до 200");
             }
 
-            var query = await _repository.StartQueryToFindAllAsync();
+            var result = await _repository.GetPagedAsync(title, from, to, page, pageSize);
 
-            if (!string.IsNullOrEmpty(title))
-            {
-                query = query.Where(x => x.Title.Trim().Contains(title, StringComparison.OrdinalIgnoreCase));
-            }
-            if(from.HasValue && from is not null)
-            {
-                query = query.Where(x => x.StartAt.Date >= from.Value.Date);
-            }
-            if(to.HasValue && to is not null)
-            {
-                query = query.Where(x => x.EndAt.Date <= to.Value.Date);
-            }
-            var totalCount = await query.CountAsync();
-            var resultQuery = await query.OrderByDescending(x => x.EndAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-
-            var result = new PaginatedResult<EventModel>
-            {
-                Items = resultQuery,
-                TotalCount = totalCount,
-                Page = page,
-                PageSize = pageSize
-            };
-            _logger.LogInformation("[EventService] [FindAll] Выполнен FindAll: title={Title}, from={From}, to={To}, page ={Page}, pSize={pSize}. Получилось: {TotalCount}",
-                title, from, to, page, pageSize, result.Items.Count());
+            _logger.LogInformation("[EventService] [FindAll] Выполнен FindAll. Получено строк: {TotalCount}", result.TotalCount);
 
             return result;
         }
@@ -100,20 +77,37 @@ namespace YAP_middle_csharp.Services
         /// <param name="entity">Принимает модель события</param>
         /// <returns>Возвращает уникальный идентификатор нового события</returns>
         /// <exception cref="ValidationExceptionApp">Выбрасывается, в случае если передана пустая модель</exception>
-        public async Task<Guid> CreateAsync(EventModel entity)
+        public async Task<EventModel> CreateAsync(EventRequest eventRequest)
         {
-            _logger.LogDebug("[EventService] [Create] Попытка Create Event. entity = {@entity} ", entity);
+            _logger.LogDebug("[EventService] [Create] Попытка создания Event");
 
-            if (entity is null)
+            if (eventRequest is null)
             {
-                _logger.LogError("[EventService] [Create] Ошибка Create. попытка передать null сущность");
-                throw new ValidationExceptionApp(nameof(entity));
+                throw new ValidationExceptionApp("Запрос на создание события не может быть пустым");
             }
 
-            await _repository.CreateAsync(entity);
-            _logger.LogInformation("[EventService] [Create] Создание нового Event с Id: {Id} ", entity.Id);
+            var eventModel = new EventModel()
+            {
+                Id = Guid.NewGuid(),
+                Title = eventRequest.Title,
+                Description = eventRequest.Description,
+                TotalSeats = eventRequest.TotalSeats ?? 0,
+                AvailableSeats = eventRequest.TotalSeats ?? 0,
+                StartAt = eventRequest.StartAt,
+                EndAt = eventRequest.EndAt
+            };
 
-            return entity.Id;
+            var errors = _validator.GetErrors(eventModel).ToList();
+            if (errors.Any())
+            {
+                _logger.LogDebug(string.Join("; ", errors), "[EventService] [Create] Ошибка валидации");
+                throw new ValidationExceptionApp(string.Join("; ", errors));
+            }
+
+            await _repository.CreateAsync(eventModel);
+            _logger.LogInformation("[EventService] [Create] Создано Event ID: {Id}", eventModel.Id);
+
+            return eventModel;
         }
 
         /// <summary>
@@ -123,36 +117,36 @@ namespace YAP_middle_csharp.Services
         /// <returns>Возвращает обновлённую модель</returns>
         /// <exception cref="ValidationExceptionApp">Выбрасывается, в случае если модель пустая</exception>
         /// <exception cref="NotFoundExceptionApp">Выбрасывается в случае, если такого события по ID не найдено</exception>
-        public async Task<EventModel> UpdateAsync(EventModel entity)
+        public async Task<EventModel> UpdateAsync(EventResponse eventResponse)
         {
-
-            if (entity is null)
+            if (eventResponse is null)
             {
-                _logger.LogError("[EventService] [Update] Ошибка Update. попытка передать null сущность");
-                throw new ValidationExceptionApp(nameof(entity));
+                throw new ValidationExceptionApp("Данные для обновления не могут быть пустыми");
             }
 
-            var findEvent = await _repository.FindByIdAsync(entity.Id);
+            var findEvent = await _repository.FindByIdAsync(eventResponse.Id);
             if (findEvent is null)
             {
-                _logger.LogError("[EventService] [Update] Ошибка Update. Событие с ID: {id}, не найдено!", entity.Id);
+                _logger.LogError("[EventService] [Update] Event ID: {id} не найдено!", eventResponse.Id);
                 throw new NotFoundExceptionApp("Event не найден!");
             }
 
-            findEvent.Title = entity.Title;
-            findEvent.Description = entity.Description;
-            findEvent.TotalSeats = entity.TotalSeats;
-            findEvent.AvailableSeats = entity.AvailableSeats;
-            findEvent.StartAt = entity.StartAt;
-            findEvent.EndAt = entity.EndAt;
+            findEvent.Title = eventResponse.Title;
+            findEvent.Description = eventResponse.Description;
+            findEvent.TotalSeats = eventResponse.TotalSeats;
+            findEvent.StartAt = eventResponse.StartAt;
+            findEvent.EndAt = eventResponse.EndAt;
 
-            _logger.LogDebug("[EventService] [Update] Попытка обновления Event. entity = {@entity} ", findEvent);
+            var errors = _validator.GetErrors(findEvent).ToList();
+            if (errors.Any())
+            {
+                throw new ValidationExceptionApp(string.Join("; ", errors));
+            }
 
             await _repository.UpdateAsync(findEvent);
+            _logger.LogInformation("[EventService] [Update] Event ID: {Id}, успешно обновлён", findEvent.Id);
 
-            _logger.LogInformation("[EventService] [Update] Event обновлён. Новые данные: entity = {@entity} ", entity);
-
-            return entity;
+            return findEvent;
         }
 
         /// <summary>
@@ -162,19 +156,57 @@ namespace YAP_middle_csharp.Services
         /// <returns>Ничего не возвращается</returns>
         /// <exception cref="ValidationExceptionApp">Выбрасывается, в случае если модель пустая</exception>
         /// <exception cref="NotFoundExceptionApp">Выбрасывается в случае, если такого события по ID не найдено</exception>
-        public async Task DeleteAsync(EventModel entity)
+        public async Task DeleteAsync(Guid id)
         {
-            if (entity is null)
+            _logger.LogDebug("[EventService] [Delete] Попытка Delete Event ID = {Id}", id);
+
+            var findEvent = await _repository.FindByIdAsync(id);
+            if (findEvent is null)
             {
-                _logger.LogError("[EventService] [Delete]  Ошибка Delete. попытка передать null сущность");
-                throw new ValidationExceptionApp(nameof(entity));
+                _logger.LogInformation("[EventService] [Delete] Event ID: {id} не найден!", id);
+                throw new NotFoundExceptionApp($"Event ID: {id} не найден!");
             }
 
-            _logger.LogDebug("[EventService] [Delete] Попытка Delete Event. entity = {@entity} ", entity);
+            await _repository.DeleteAsync(findEvent);
+            _logger.LogInformation("[EventService] [Delete] Event ID: {Id}, успешно удалён!", id);
+        }
 
+        /// <summary>
+        /// Реализация контранкта с ICommandService<EventModel>
+        /// </summary>
+        /// <param name="entity">Принимает сущность EventModel</param>
+        /// <returns></returns>
+        /// <exception cref="ValidationExceptionApp">Возвращает в случае если переданная сущность is null</exception>
+        public async Task<Guid> CreateAsync(EventModel entity)
+        {
+            if (entity is null) throw new ValidationExceptionApp(nameof(entity));
+            await _repository.CreateAsync(entity);
+            return entity.Id;
+        }
+
+        /// <summary>
+        /// Реализация контранкта с ICommandService<EventModel>
+        /// </summary>
+        /// <param name="entity">Принимает сущность EventModel</param>
+        /// <returns></returns>
+        /// <exception cref="ValidationExceptionApp">Возвращает в случае если переданная сущность is null</exception>
+        public async Task<EventModel> UpdateAsync(EventModel entity)
+        {
+            if (entity is null) throw new ValidationExceptionApp(nameof(entity));
+            await _repository.UpdateAsync(entity);
+            return entity;
+        }
+
+        /// <summary>
+        /// Реализация контранкта с ICommandService<EventModel>
+        /// </summary>
+        /// <param name="entity">Принимает сущность EventModel</param>
+        /// <returns></returns>
+        /// <exception cref="ValidationExceptionApp">Возвращает в случае если переданная сущность is null</exception>
+        public async Task DeleteAsync(EventModel entity)
+        {
+            if (entity is null) throw new ValidationExceptionApp(nameof(entity));
             await _repository.DeleteAsync(entity);
-
-            _logger.LogInformation("[EventService] [Delete] Event удалён: id={Id}", entity.Id);
         }
     }
 }

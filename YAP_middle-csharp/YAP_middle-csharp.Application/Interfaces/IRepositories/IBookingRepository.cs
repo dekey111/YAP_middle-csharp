@@ -8,5 +8,7 @@ namespace YAP_middle_csharp.Interfaces.IRepositories
     public interface IBookingRepository : IGenericRepository<BookingModel>
     {
         Task<IEnumerable<BookingModel>> FindPendingBookingsAsync();
+        Task<PaginatedResult<BookingModel>> GetPagedAsync(string? title, DateTime? from, DateTime? to, int page, int pageSize);
+
     }
 }

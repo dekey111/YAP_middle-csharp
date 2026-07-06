@@ -8,6 +8,8 @@ namespace YAP_middle_csharp.Application.Interfaces.IServices
     /// </summary>
     public interface IEventService : IQueryService<EventModel>, ICommandService<EventModel>
     {
-        
+        Task<EventModel> CreateAsync(EventRequest eventRequest);
+        Task<EventModel> UpdateAsync(EventResponse eventResponse);
+        Task DeleteAsync(Guid id);
     }
 }
