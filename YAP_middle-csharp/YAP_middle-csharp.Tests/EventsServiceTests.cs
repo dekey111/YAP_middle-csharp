@@ -1,14 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using YAP_middle_csharp.Application.Interfaces;
+using YAP_middle_csharp.Application.Interfaces.IRepositories;
 using YAP_middle_csharp.Application.Interfaces.IServices;
-using YAP_middle_csharp.DataAccess;
-using YAP_middle_csharp.Exceptions;
-using YAP_middle_csharp.Interfaces;
-using YAP_middle_csharp.Interfaces.IRepositories;
-using YAP_middle_csharp.Models;
-using YAP_middle_csharp.Repository;
-using YAP_middle_csharp.Services;
-using YAP_middle_csharp.Validator;
+using YAP_middle_csharp.Application.Services;
+using YAP_middle_csharp.Application.Validator;
+using YAP_middle_csharp.Domain.Exceptions;
+using YAP_middle_csharp.Domain.Models;
+using YAP_middle_csharp.Infrastructure.DataAccess;
+using YAP_middle_csharp.Infrastructure.Repository;
 
 namespace YAP_middle_csharp.Tests
 {

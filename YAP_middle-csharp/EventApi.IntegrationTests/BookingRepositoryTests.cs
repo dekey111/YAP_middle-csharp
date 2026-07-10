@@ -2,9 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using YAP_middle_csharp.DataAccess;
-using YAP_middle_csharp.Models;
-using YAP_middle_csharp.Repository;
+using YAP_middle_csharp.Domain.Models;
+using YAP_middle_csharp.Infrastructure.DataAccess;
+using YAP_middle_csharp.Infrastructure.Repository;
+
 
 namespace EventApi.IntegrationTests
 {
