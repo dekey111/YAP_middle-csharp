@@ -2,8 +2,8 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using YAP_middle_csharp.Application;
-using YAP_middle_csharp.DataAccess;
 using YAP_middle_csharp.Infrastructure;
+using YAP_middle_csharp.Infrastructure.DataAccess;
 using YAP_middle_csharp.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);

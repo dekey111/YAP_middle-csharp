@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using YAP_middle_csharp.Application.Interfaces.IServices;
-using YAP_middle_csharp.Exceptions;
-using YAP_middle_csharp.Interfaces;
-using YAP_middle_csharp.Models;
+using YAP_middle_csharp.Application.Models;
+using YAP_middle_csharp.Domain.Exceptions;
+using YAP_middle_csharp.Domain.Models;
+
 
 namespace YAP_middle_csharp.Controllers
 {
