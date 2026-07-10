@@ -1,10 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using YAP_middle_csharp.DataAccess;
-using YAP_middle_csharp.Exceptions;
-using YAP_middle_csharp.Interfaces.IRepositories;
-using YAP_middle_csharp.Models;
+using YAP_middle_csharp.Application.Interfaces.IRepositories;
+using YAP_middle_csharp.Application.Models;
+using YAP_middle_csharp.Domain.Models;
+using YAP_middle_csharp.Infrastructure.DataAccess;
 
-namespace YAP_middle_csharp.Repository
+
+namespace YAP_middle_csharp.Infrastructure.Repository
 {
 
     /// <summary>

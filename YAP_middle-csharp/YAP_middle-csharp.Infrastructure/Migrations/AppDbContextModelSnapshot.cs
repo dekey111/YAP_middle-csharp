@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using YAP_middle_csharp.DataAccess;
+using YAP_middle_csharp.Infrastructure.DataAccess;
 
 #nullable disable
 
-namespace YAP_middle_csharp.Migrations
+namespace YAP_middle_csharp.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     partial class AppDbContextModelSnapshot : ModelSnapshot
