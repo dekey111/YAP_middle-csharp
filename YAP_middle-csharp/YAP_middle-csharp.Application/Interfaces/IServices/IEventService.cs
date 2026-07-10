@@ -1,4 +1,6 @@
-﻿using YAP_middle_csharp.Models;
+﻿
+using YAP_middle_csharp.Application.Models;
+using YAP_middle_csharp.Domain.Models;
 
 namespace YAP_middle_csharp.Application.Interfaces.IServices
 {

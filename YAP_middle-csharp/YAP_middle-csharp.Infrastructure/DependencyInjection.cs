@@ -1,12 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using YAP_middle_csharp.DataAccess;
-using YAP_middle_csharp.Interfaces.IRepositories;
-using YAP_middle_csharp.Repository;
-using YAP_middle_csharp.Services.BackgroundServices;
+using YAP_middle_csharp.Application.Interfaces.IRepositories;
+using YAP_middle_csharp.Application.Services.BackgroundServices;
+using YAP_middle_csharp.Infrastructure.DataAccess;
+using YAP_middle_csharp.Infrastructure.Repository;
+
 
 namespace YAP_middle_csharp.Infrastructure
 {

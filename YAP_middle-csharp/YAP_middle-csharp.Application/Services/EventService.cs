@@ -1,9 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
-using YAP_middle_csharp.Exceptions;
-using YAP_middle_csharp.Interfaces;
-using YAP_middle_csharp.Interfaces.IRepositories;
-using YAP_middle_csharp.Models;
+using YAP_middle_csharp.Application.Interfaces;
+using YAP_middle_csharp.Application.Interfaces.IRepositories;
 using YAP_middle_csharp.Application.Interfaces.IServices;
+using YAP_middle_csharp.Application.Models;
+using YAP_middle_csharp.Domain.Exceptions;
+using YAP_middle_csharp.Domain.Models;
 
 namespace YAP_middle_csharp.Application.Services
 {

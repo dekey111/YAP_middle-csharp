@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using YAP_middle_csharp.Domain.Models;
 
 namespace YAP_middle_csharp.Application.Models
 {
