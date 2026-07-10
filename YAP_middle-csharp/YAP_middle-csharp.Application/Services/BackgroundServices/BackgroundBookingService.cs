@@ -5,7 +5,7 @@ using YAP_middle_csharp.Application.Interfaces.IServices;
 using YAP_middle_csharp.Interfaces.IRepositories;
 using YAP_middle_csharp.Models;
 
-namespace YAP_middle_csharp.Services.BackgroundServices
+namespace YAP_middle_csharp.Application.Services.BackgroundServices
 {
     /// <summary>
     /// Фоновый метод для обработки поступающих заказов

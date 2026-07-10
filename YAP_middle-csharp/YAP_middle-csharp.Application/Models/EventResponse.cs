@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace YAP_middle_csharp.Models
+namespace YAP_middle_csharp.Application.Models
 {
     /// <summary>
     /// Кастомная модель событий для обновления/удаления модели

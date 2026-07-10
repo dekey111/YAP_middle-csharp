@@ -1,12 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using YAP_middle_csharp.Application.Interfaces.IServices;
+using YAP_middle_csharp.Application.Services;
+using YAP_middle_csharp.Application.Validator;
 using YAP_middle_csharp.Interfaces;
 using YAP_middle_csharp.Models;
-using YAP_middle_csharp.Services;
-using YAP_middle_csharp.Validator;
 
 namespace YAP_middle_csharp.Application
 {

@@ -1,11 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
-using YAP_middle_csharp.Application.Interfaces.IServices;
 using YAP_middle_csharp.Exceptions;
 using YAP_middle_csharp.Interfaces;
 using YAP_middle_csharp.Interfaces.IRepositories;
 using YAP_middle_csharp.Models;
+using YAP_middle_csharp.Application.Interfaces.IServices;
 
-namespace YAP_middle_csharp.Services
+namespace YAP_middle_csharp.Application.Services
 {
     /// <summary>
     /// Сервис с бизнес логикой для работы с Event

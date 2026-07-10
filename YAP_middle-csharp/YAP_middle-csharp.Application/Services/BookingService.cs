@@ -4,7 +4,7 @@ using YAP_middle_csharp.Exceptions;
 using YAP_middle_csharp.Interfaces.IRepositories;
 using YAP_middle_csharp.Models;
 
-namespace YAP_middle_csharp.Services
+namespace YAP_middle_csharp.Application.Services
 {
     /// <summary>
     /// Сервис для работы с бронями

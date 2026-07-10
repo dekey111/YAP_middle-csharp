@@ -1,4 +1,4 @@
-﻿namespace YAP_middle_csharp.Models
+﻿namespace YAP_middle_csharp.Application.Models
 {
     /// <summary>
     /// Кастомный класс для возврата списка данных с пагинацией страниц и элементов

@@ -1,7 +1,7 @@
 ﻿using YAP_middle_csharp.Interfaces;
 using YAP_middle_csharp.Models;
 
-namespace YAP_middle_csharp.Validator
+namespace YAP_middle_csharp.Application.Validator
 {
     public class BookingValidator : IValidator<BookingModel>
     {

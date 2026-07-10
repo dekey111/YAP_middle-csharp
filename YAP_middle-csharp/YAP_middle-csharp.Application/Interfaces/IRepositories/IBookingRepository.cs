@@ -1,6 +1,7 @@
-﻿using YAP_middle_csharp.Models;
+﻿using YAP_middle_csharp.Application.Models;
+using YAP_middle_csharp.Models;
 
-namespace YAP_middle_csharp.Interfaces.IRepositories
+namespace YAP_middle_csharp.Application.Interfaces.IRepositories
 {
     /// <summary>
     /// Интерфейс для работы с БД броней

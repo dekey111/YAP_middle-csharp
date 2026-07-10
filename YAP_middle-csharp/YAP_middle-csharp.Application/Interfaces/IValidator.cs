@@ -1,4 +1,4 @@
-﻿namespace YAP_middle_csharp.Interfaces
+﻿namespace YAP_middle_csharp.Application.Interfaces
 {
     public interface IValidator<in T>
     {

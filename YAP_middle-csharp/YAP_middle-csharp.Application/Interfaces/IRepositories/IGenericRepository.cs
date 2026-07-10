@@ -1,4 +1,4 @@
-﻿namespace YAP_middle_csharp.Interfaces.IRepositories
+﻿namespace YAP_middle_csharp.Application.Interfaces.IRepositories
 {
     /// <summary>
     /// Универсальный интерфейс репозитория для работы с хранилищем данных.
