@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace YAP_middle_csharp.Models
+namespace YAP_middle_csharp.Domain.Models
 {
     /// <summary>
     /// Базовая модель бронирований из БД

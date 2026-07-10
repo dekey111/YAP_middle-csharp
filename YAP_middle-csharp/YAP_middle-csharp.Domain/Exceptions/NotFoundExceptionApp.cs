@@ -1,4 +1,6 @@
-﻿namespace YAP_middle_csharp.Exceptions
+﻿using YAP_middle_csharpю.Domain.Exceptions;
+
+namespace YAP_middle_csharp.Domain.Exceptions
 {
     /// <summary>
     /// Кастомный экспешн для обработки не найденных сущностей

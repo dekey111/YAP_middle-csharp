@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.Metrics;
 
-namespace YAP_middle_csharp.Models
+namespace YAP_middle_csharp.Domain.Models
 {
     /// <summary>
     /// Базовая модель событий из БД

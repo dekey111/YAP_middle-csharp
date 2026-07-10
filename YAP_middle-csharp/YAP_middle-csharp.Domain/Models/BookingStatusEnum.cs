@@ -1,4 +1,4 @@
-﻿namespace YAP_middle_csharp.Models
+﻿namespace YAP_middle_csharp.Domain.Models
 {
     /// <summary>
     /// Базовая модель статусов бронирования из БД
