@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
-using YAP_middle_csharp.Exceptions;
+using YAP_middle_csharpю.Domain.Exceptions;
 
 namespace YAP_middle_csharp.Middleware
 {

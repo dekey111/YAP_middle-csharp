@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Testcontainers.PostgreSql;
+﻿using Testcontainers.PostgreSql;
 
 namespace EventApi.IntegrationTests
 {

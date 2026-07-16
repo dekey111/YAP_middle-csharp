@@ -1,53 +1,31 @@
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
-using YAP_middle_csharp.DataAccess;
-using YAP_middle_csharp.Interfaces;
-using YAP_middle_csharp.Interfaces.IRepositories;
-using YAP_middle_csharp.Interfaces.IServices;
+using YAP_middle_csharp.Application;
+using YAP_middle_csharp.Infrastructure;
+using YAP_middle_csharp.Infrastructure.DataAccess;
 using YAP_middle_csharp.Middleware;
-using YAP_middle_csharp.Models;
-using YAP_middle_csharp.Repository;
-using YAP_middle_csharp.Services;
-using YAP_middle_csharp.Services.BackgroundServices;
-using YAP_middle_csharp.Validator;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connectionString).LogTo(Console.WriteLine));
-
-builder.Services.AddHostedService<BackgroundBookingService>();
-
-builder.Services.AddScoped<IEventRepository, EventRepository>();
-builder.Services.AddScoped<IBookingRepository, BookingRepository>(); 
-
-builder.Services.AddScoped<IEventService, EventService>();
-builder.Services.AddScoped<IBookingService, BookingService>();
-builder.Services.AddTransient<IValidator<EventModel>, EventValidator>();
-builder.Services.AddTransient<IValidator<BookingModel>, BookingValidator>();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
+builder.Services.AddInfrastructure(connectionString);
+builder.Services.AddApplication();
 builder.Services.AddControllers(options =>
 {
     options.SuppressAsyncSuffixInActionNames = false;
 });
-
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 builder.Services.AddOpenApi();
 
 builder.Services.AddProblemDetails(options =>
 {
     options.CustomizeProblemDetails = context =>
     {
-        context.ProblemDetails.Instance =
-            $"{context.HttpContext.Request.Method} {context.HttpContext.Request.Path}";
-
+        context.ProblemDetails.Instance = $"{context.HttpContext.Request.Method} {context.HttpContext.Request.Path}";
         context.ProblemDetails.Extensions.TryAdd("requestId", context.HttpContext.TraceIdentifier);
 
         Activity? activity = context.HttpContext.Features.Get<IHttpActivityFeature>()?.Activity;
@@ -56,14 +34,15 @@ builder.Services.AddProblemDetails(options =>
 });
 
 var app = builder.Build();
+
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
 }
+
 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -72,9 +51,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();

@@ -2,9 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using YAP_middle_csharp.DataAccess;
-using YAP_middle_csharp.Models;
-using YAP_middle_csharp.Repository;
+using YAP_middle_csharp.Domain.Models;
+using YAP_middle_csharp.Infrastructure.DataAccess;
+using YAP_middle_csharp.Infrastructure.Repository;
+
 
 namespace EventApi.IntegrationTests
 {
@@ -69,10 +70,10 @@ namespace EventApi.IntegrationTests
             _context.Bookings.AddRange(booking1, booking2);
             await _context.SaveChangesAsync();
 
-            var query = await _repository.StartQueryToFindAllAsync();
-            var result = await query.ToListAsync();
+            var paginatedResult = await _repository.GetPagedAsync(null, null, null, 1, 10);
 
-            Assert.Equal(2, result.Count);
+            Assert.Equal(2, paginatedResult.Items.Count());
+            Assert.Equal(2, paginatedResult.TotalCount);
         }
 
         [Fact]

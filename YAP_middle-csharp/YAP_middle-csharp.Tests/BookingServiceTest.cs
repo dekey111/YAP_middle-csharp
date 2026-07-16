@@ -1,21 +1,16 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using YAP_middle_csharp.DataAccess;
-using YAP_middle_csharp.Exceptions;
-using YAP_middle_csharp.Interfaces.IRepositories;
-using YAP_middle_csharp.Interfaces.IServices;
-using YAP_middle_csharp.Models;
-using YAP_middle_csharp.Repository;
-using YAP_middle_csharp.Services;
-using YAP_middle_csharp.Services.BackgroundServices;
-using YAP_middle_csharp.Validator;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using YAP_middle_csharp.Application.Interfaces;
+using YAP_middle_csharp.Application.Interfaces.IRepositories;
+using YAP_middle_csharp.Application.Interfaces.IServices;
+using YAP_middle_csharp.Application.Services;
+using YAP_middle_csharp.Application.Services.BackgroundServices;
+using YAP_middle_csharp.Application.Validator;
+using YAP_middle_csharp.Domain.Exceptions;
+using YAP_middle_csharp.Domain.Models;
+using YAP_middle_csharp.Infrastructure.DataAccess;
+using YAP_middle_csharp.Infrastructure.Repository;
 
 namespace YAP_middle_csharp.Tests
 {
@@ -34,6 +29,7 @@ namespace YAP_middle_csharp.Tests
                 options.UseInMemoryDatabase(dbName));
 
             services.AddLogging();
+            services.AddTransient<IValidator<EventModel>, EventValidator>();
 
             services.AddScoped<IEventRepository, EventRepository>();
             services.AddScoped<IEventService, EventService>();

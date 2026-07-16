@@ -1,7 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using YAP_middle_csharp.DataAccess;
-using YAP_middle_csharp.Models;
-using YAP_middle_csharp.Repository;
+using YAP_middle_csharp.Domain.Models;
+using YAP_middle_csharp.Infrastructure.DataAccess;
+using YAP_middle_csharp.Infrastructure.Repository;
+
 
 namespace EventApi.IntegrationTests
 {
@@ -73,12 +74,8 @@ namespace EventApi.IntegrationTests
             _context.Events.AddRange(event1, event2, event3);
             await _context.SaveChangesAsync();
 
-            var query = await _repository.StartQueryToFindAllAsync();
-            var filteredAndPaginated = await query
-                .Where(e => e.Title.Contains("C#"))
-                .Skip(0) 
-                .Take(1) 
-                .ToListAsync();
+            var query = await _repository.GetPagedAsync("C#", null, null, 1, 1);
+            var filteredAndPaginated = query.Items;
 
             Assert.Single(filteredAndPaginated);
             Assert.Contains("C#", filteredAndPaginated.First().Title); 
