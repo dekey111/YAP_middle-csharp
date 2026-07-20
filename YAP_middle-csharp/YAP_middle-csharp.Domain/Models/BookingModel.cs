@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using YAP_middle_csharp.Domain.Exceptions;
 
 namespace YAP_middle_csharp.Domain.Models
 {
@@ -9,6 +10,7 @@ namespace YAP_middle_csharp.Domain.Models
     {
         public required Guid Id { get; set; }
         public required Guid EventId { get; set; }
+        public required Guid UserId { get; set; }
         public required BookingStatusEnum Status { get; set; }
 
         private DateTimeOffset _createdAt; 
@@ -41,12 +43,24 @@ namespace YAP_middle_csharp.Domain.Models
         }
 
         [SetsRequiredMembers]
-        public BookingModel(Guid eventId)
+        public BookingModel(Guid eventId, Guid userId)
         {
             Id = Guid.NewGuid();
             EventId = eventId;
             Status = BookingStatusEnum.Pending;
             CreatedAt = DateTime.UtcNow;
+            UserId = userId;
+        }
+
+        public void Cancel()
+        {
+            if(Status != BookingStatusEnum.Pending)
+            {
+                throw new ValidationExceptionApp("Бронирование нельзя отменить, потому что оно уже обработано");
+            }
+
+            Status = BookingStatusEnum.Cancelled;
+            ProcessedAt = DateTime.UtcNow;
         }
     }
 }

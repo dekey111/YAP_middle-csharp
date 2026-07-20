@@ -108,20 +108,43 @@ namespace YAP_middle_csharp.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-        public async Task<IActionResult> AddBookingByEventIdAsync(Guid eventId)
+        public async Task<IActionResult> AddBookingByEventIdAsync([FromRoute] Guid eventId, [FromBody] Guid userId)
         {
             _logger.LogInformation("[EventsController] [AddBookingByEventId] Запрос на бронирование события {EventId}", eventId);
-            var newBooking = await _bookingService.CreateBookingAsync(eventId);
+            var newBooking = await _bookingService.CreateBookingAsync(eventId, userId);
             var bookingResponse = new
             {
                 id = newBooking.Id,
                 eventId = newBooking.EventId,
                 status = newBooking.Status.ToString(),
                 createdAt = newBooking.CreatedAt,
-                processedAt = newBooking.ProcessedAt
+                processedAt = newBooking.ProcessedAt,
+                userId = newBooking.UserId
             };
 
             return AcceptedAtAction("GetBookingAsync", "Booking", new { id = newBooking.Id }, bookingResponse);
+        }
+
+
+        /// <summary>
+        /// Отмена бронирования на событие
+        /// </summary>
+        /// <param name="eventId">Принимает уникальный идентификатор события</param>
+        /// <param name="bookingId">Принимает уникальный идентификатор брони</param>
+        /// <returns>204 - Успешная отмена брони, ничего не возвращает</returns>
+        /// <returns>400 - Возвращается при ошибки валидации</returns>
+        /// <returns>404 - Возвращается, в случае если не удалось найти событие </returns>
+        /// <returns>409 - Возвращается если свободных мест больше нет</returns>
+        /// <exception cref="NotFoundExceptionApp"></exception>
+        [HttpPost("{eventId:guid}/book/{bookingId:guid}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> CancelBookingAsync([FromRoute] Guid eventId, [FromRoute] Guid bookingId)
+        {
+            _logger.LogInformation("[EventsController] [CancelBookingAsync] Запрос на отмену брони {BookingId} для события {EventId}", bookingId, eventId);
+            await _bookingService.CancelledBookingAsync(eventId, bookingId);
+            return NoContent();
         }
 
         /// <summary>
