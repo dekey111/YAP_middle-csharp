@@ -14,6 +14,7 @@ namespace YAP_middle_csharp.Infrastructure
         {
             services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString).LogTo(Console.WriteLine));
 
+            services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IEventRepository, EventRepository>();
             services.AddScoped<IBookingRepository, BookingRepository>();
             services.AddHostedService<BackgroundBookingService>();

@@ -15,7 +15,7 @@ namespace YAP_middle_csharp.Application
             services.AddScoped<IEventService, EventService>();
             services.AddScoped<IBookingService, BookingService>();
             services.AddScoped<IPasswordHasherService, PasswordHasherService>();
-            services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+            services.AddScoped<IUserService, UserService>();
 
             services.AddTransient<IValidator<EventModel>, EventValidator>();
             services.AddTransient<IValidator<BookingModel>, BookingValidator>();

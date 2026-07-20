@@ -133,10 +133,23 @@ namespace YAP_middle_csharp.Application.Services
                     throw new NotFoundExceptionApp("Событие не найдено");
                 }
 
+                if (DateTime.UtcNow >= findEvent.StartAt)
+                {
+                    _logger.LogWarning("[BookingService] [CreateBookingAsync] Попытка забронировать уже начавшееся событие {EventId}", eventId);
+                    throw new ValidationExceptionApp("Нельзя забронировать событие, которое уже началось");
+                }
+
                 if (DateTime.UtcNow >= findEvent.EndAt)
                 {
                     _logger.LogWarning("[BookingService] [CreateBookingAsync] Срок регистрации на событие истек {EventId}", eventId);
                     throw new ValidationExceptionApp("Срок регистрации на событие истек");
+                }
+
+                int activeBookingsCount = await _repository.CheckActiveCountBookingByUserId(userId);
+                if (activeBookingsCount >= 10)
+                {
+                    _logger.LogWarning("[BookingService] [CreateBookingAsync] Пользователь {UserId} превысил лимит активных броней", userId);
+                    throw new BookingLimitExceededException(10); 
                 }
 
                 bool hasSeat = findEvent.TryReserveSeats(1);
@@ -229,7 +242,7 @@ namespace YAP_middle_csharp.Application.Services
         /// Метод отмены бронирования
         /// </summary>
         /// <param name="bookingId">Принимает УИ бронирования </param>
-        public async Task CancelledBookingAsync(Guid eventId, Guid bookingId)
+        public async Task CancelledBookingAsync(Guid eventId, Guid bookingId, Guid currentUserId, UserRoleEnum currentUserRole)
         {
             _logger.LogWarning("[BookingService] [CancelledBookingAsync] Попытка отмены бронирования: {bookingId} у события: {eventId}", bookingId, eventId);
 
@@ -248,6 +261,12 @@ namespace YAP_middle_csharp.Application.Services
                 {
                     _logger.LogWarning("[BookingService] [CancelledBookingAsync] Бронь id: {bookingId} на событие: {eventId} не найдена! ", bookingId, eventId);
                     throw new NotFoundExceptionApp("Бронирование не найдено");
+                }
+
+                if (findBooking.UserId != currentUserId && currentUserRole != UserRoleEnum.Admin)
+                {
+                    _logger.LogWarning("[BookingService] [CancelledBookingAsync] Пользователь: {UserId} пытается отменить чужую бронь: {BookingId}", currentUserId, bookingId);
+                    throw new UnauthorizedOperationException(); 
                 }
 
                 if (findBooking.EventId != eventId)
