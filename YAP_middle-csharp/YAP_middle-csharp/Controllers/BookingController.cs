@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using YAP_middle_csharp.Application.Interfaces.IServices;
 using YAP_middle_csharp.Domain.Models;
 
@@ -21,6 +22,7 @@ namespace YAP_middle_csharp.Controllers
         /// <returns>Возвращает бронь</returns>
         /// <exception cref="NotFoundExceptionApp"></exception>
         [HttpGet("/bookings/{id:guid}")]
+        [Authorize]
         [ProducesResponseType(typeof(BookingModel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetBookingAsync(Guid id)

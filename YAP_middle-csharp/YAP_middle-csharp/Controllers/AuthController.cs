@@ -6,7 +6,7 @@ using YAP_middle_csharp.Application.Models;
 namespace YAP_middle_csharp.Controllers
 {
     [ApiController]
-    [Route("api/auth")]
+    [Route("[controller]")]
     [Produces("application/json")]
     public class AuthController(IUserService userService, ILogger<AuthController> logger) : ControllerBase
     {

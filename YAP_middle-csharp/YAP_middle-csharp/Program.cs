@@ -1,6 +1,9 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using System.Diagnostics;
+using System.Text;
 using YAP_middle_csharp.Application;
 using YAP_middle_csharp.Infrastructure;
 using YAP_middle_csharp.Infrastructure.DataAccess;
@@ -33,6 +36,34 @@ builder.Services.AddProblemDetails(options =>
     };
 });
 
+var jwtOptions = builder.Configuration.GetSection("JwtSettings");
+var secretKey = jwtOptions["SecretKey"] ?? throw new InvalidOperationException("SecretKey not found");
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidIssuer = jwtOptions["Issuer"],
+
+        ValidateAudience = true,
+        ValidAudience = jwtOptions["Audience"],
+
+        ValidateLifetime = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+        ValidateIssuerSigningKey = true,
+
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+builder.Services.AddAuthorization();
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -51,7 +82,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseAuthorization();
+app.UseAuthentication(); 
+app.UseAuthorization();  
 app.MapControllers();
 
 app.Run();
