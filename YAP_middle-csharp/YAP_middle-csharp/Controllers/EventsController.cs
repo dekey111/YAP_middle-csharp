@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using YAP_middle_csharp.Application.Interfaces.IServices;
 using YAP_middle_csharp.Application.Models;
@@ -13,11 +14,11 @@ namespace YAP_middle_csharp.Controllers
     [Produces("application/json")]
     public class EventsController(IEventService eventService,
         IBookingService bookingService,
-        ILogger<BookingController> logger) : ControllerBase
+        ILogger<EventsController> logger) : ControllerBase
     {
         private readonly IEventService _eventService = eventService;
         private readonly IBookingService _bookingService = bookingService;
-        private readonly ILogger<BookingController> _logger = logger;
+        private readonly ILogger<EventsController> _logger = logger;
 
         /// <summary>
         /// Метод получения всех событий
@@ -82,6 +83,7 @@ namespace YAP_middle_csharp.Controllers
         /// <returns>Возвращает 201 с ссылкой на созданное событие</returns>
         /// <returns>Возвращает 400 в случае ошибки валидации события</returns>
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(EventResponse), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> AddEventAsync([FromBody] EventRequest eventRequest)
@@ -104,24 +106,52 @@ namespace YAP_middle_csharp.Controllers
         /// <returns>409 - Возвращается если свободных мест больше нет</returns>
         /// <exception cref="NotFoundExceptionApp"></exception>
         [HttpPost("{eventId:guid}/book")]
+        [Authorize]
         [ProducesResponseType(typeof(BookingModel), StatusCodes.Status202Accepted)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-        public async Task<IActionResult> AddBookingByEventIdAsync(Guid eventId)
+        public async Task<IActionResult> AddBookingByEventIdAsync([FromRoute] Guid eventId)
         {
+
+            var userId = GetCurrentUserId();
+
             _logger.LogInformation("[EventsController] [AddBookingByEventId] Запрос на бронирование события {EventId}", eventId);
-            var newBooking = await _bookingService.CreateBookingAsync(eventId);
+            var newBooking = await _bookingService.CreateBookingAsync(eventId, userId);
             var bookingResponse = new
             {
                 id = newBooking.Id,
                 eventId = newBooking.EventId,
                 status = newBooking.Status.ToString(),
                 createdAt = newBooking.CreatedAt,
-                processedAt = newBooking.ProcessedAt
+                processedAt = newBooking.ProcessedAt,
+                userId = newBooking.UserId
             };
 
             return AcceptedAtAction("GetBookingAsync", "Booking", new { id = newBooking.Id }, bookingResponse);
+        }
+
+
+        /// <summary>
+        /// Отмена бронирования на событие
+        /// </summary>
+        [HttpDelete("{eventId:guid}/book/{bookingId:guid}")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> CancelBookingAsync(
+            [FromRoute] Guid eventId,
+            [FromRoute] Guid bookingId) 
+        {
+            var currentUserId = GetCurrentUserId();
+            var currentUserRole = GetCurrentUserRole();
+
+            _logger.LogInformation("[EventsController] [CancelBookingAsync] Запрос на отмену брони {BookingId} для события {EventId}", bookingId, eventId);
+
+            await _bookingService.CancelledBookingAsync(eventId, bookingId, currentUserId, currentUserRole);
+            return NoContent();
         }
 
         /// <summary>
@@ -133,6 +163,7 @@ namespace YAP_middle_csharp.Controllers
         /// <returns>Возвращает - 400 В случае ошибки валидации</returns>
         /// <returns>Возвращает - 404 В случае если событие не найдено</returns>
         [HttpPut("{id:Guid}")]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(EventResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -156,6 +187,7 @@ namespace YAP_middle_csharp.Controllers
         /// <returns>возвращает - 204 в случае успеха</returns>
         /// <returns>Возвращает - 404 В случае если событие не найдено</returns>
         [HttpDelete("{id:Guid}")]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(EventResponse), StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteEventAsync([FromRoute] Guid id)
@@ -164,6 +196,33 @@ namespace YAP_middle_csharp.Controllers
 
             await _eventService.DeleteAsync(id);
             return NoContent();
+        }
+
+
+
+        private Guid GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out var currentUserId))
+            {
+                throw new UnauthorizedOperationException();
+            }
+
+            return currentUserId;
+        }
+        private UserRoleEnum GetCurrentUserRole()
+        {
+            var roleClaim = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+                         ?? User.FindFirst("role")?.Value;
+
+            if (Enum.TryParse<UserRoleEnum>(roleClaim, true, out var role))
+            {
+                return role;
+            }
+
+            return UserRoleEnum.User;
         }
     }
 }
