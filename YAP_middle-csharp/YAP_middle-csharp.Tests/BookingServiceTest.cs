@@ -14,6 +14,7 @@ using YAP_middle_csharp.Infrastructure.Repository;
 
 namespace YAP_middle_csharp.Tests
 {
+
     public class BookingServiceTest
     {
         private readonly ServiceProvider _serviceProvider;
@@ -47,31 +48,31 @@ namespace YAP_middle_csharp.Tests
         /// <summary>
         /// Создание брони для существующего события — возвращается BookingInfo со статусом Pending;
         /// </summary>
-        /// <returns></returns>
         [Fact]
         public async Task Create_ReturnNewBooking()
         {
+            var userId = Guid.NewGuid();
             var newEvent = new EventModel
             {
                 TotalSeats = 2,
                 AvailableSeats = 2,
                 Title = "Какой то суперский Ивент",
-                StartAt = DateTime.UtcNow,
-                EndAt = DateTime.UtcNow.AddMonths(1) 
+                StartAt = DateTime.UtcNow.AddDays(1),
+                EndAt = DateTime.UtcNow.AddMonths(1)
             };
             var id = await _eventService.CreateAsync(newEvent);
-            var booking = await _bookingService.CreateBookingAsync(id);
+            var booking = await _bookingService.CreateBookingAsync(id, userId);
 
             Assert.NotNull(booking);
             Assert.Equal(newEvent.Id, booking.EventId);
+            Assert.Equal(userId, booking.UserId);
             Assert.Equal(BookingStatusEnum.Pending, booking.Status);
             Assert.NotEqual(Guid.Empty, booking.Id);
         }
 
         /// <summary>
-        /// Cоздание нескольких броней для одного события — все создаются с уникальными Id;
+        /// Создание нескольких броней для одного события — все создаются с уникальными Id;
         /// </summary>
-        /// <returns></returns>
         [Fact]
         public async Task CreateByOneEvent_ReturnUniqBooking()
         {
@@ -80,13 +81,13 @@ namespace YAP_middle_csharp.Tests
                 TotalSeats = 3,
                 AvailableSeats = 3,
                 Title = "Какой то суперский Ивент",
-                StartAt = DateTime.UtcNow,
+                StartAt = DateTime.UtcNow.AddDays(1),
                 EndAt = DateTime.UtcNow.AddMonths(1)
             };
             var id = await _eventService.CreateAsync(newEvent);
-            var booking1 = await _bookingService.CreateBookingAsync(id);
-            var booking2 = await _bookingService.CreateBookingAsync(id);
-            var booking3 = await _bookingService.CreateBookingAsync(id);
+            var booking1 = await _bookingService.CreateBookingAsync(id, Guid.NewGuid());
+            var booking2 = await _bookingService.CreateBookingAsync(id, Guid.NewGuid());
+            var booking3 = await _bookingService.CreateBookingAsync(id, Guid.NewGuid());
 
             Assert.NotNull(booking1);
             Assert.NotNull(booking2);
@@ -100,21 +101,20 @@ namespace YAP_middle_csharp.Tests
         /// <summary>
         /// получение брони по Id — возвращается корректная информация;
         /// </summary>
-        /// <returns></returns>
         [Fact]
         public async Task FindById_ReturnCurrentInfoByIdBooking()
         {
+            var userId = Guid.NewGuid();
             var newEvent = new EventModel
             {
                 TotalSeats = 2,
                 AvailableSeats = 2,
                 Title = "Какой то суперский Ивент",
-                StartAt = DateTime.UtcNow,
+                StartAt = DateTime.UtcNow.AddDays(1),
                 EndAt = DateTime.UtcNow.AddMonths(1)
             };
             var id = await _eventService.CreateAsync(newEvent);
-            var newBooking = await _bookingService.CreateBookingAsync(id);
-
+            var newBooking = await _bookingService.CreateBookingAsync(id, userId);
 
             var findBooking = await _bookingService.FindByIdAsync(newBooking.Id);
 
@@ -125,7 +125,6 @@ namespace YAP_middle_csharp.Tests
         /// <summary>
         /// Получение брони отражает изменение статуса (после Confirm/Reject).
         /// </summary>
-        /// <returns></returns>
         [Fact]
         public async Task BackgroundService_IndependentTest_ShouldConfirm()
         {
@@ -138,11 +137,11 @@ namespace YAP_middle_csharp.Tests
                 Title = "Крутое тестовое событие",
                 TotalSeats = 2,
                 AvailableSeats = 2,
-                StartAt = DateTime.UtcNow,
-                EndAt = DateTime.UtcNow.AddDays(1)
+                StartAt = DateTime.UtcNow.AddDays(1),
+                EndAt = DateTime.UtcNow.AddDays(2)
             };
             var eventId = await localEventService.CreateAsync(newEvent);
-            var booking = await localBookingService.CreateBookingAsync(eventId);
+            var booking = await localBookingService.CreateBookingAsync(eventId, Guid.NewGuid());
 
             var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
             var bgService = new BackgroundBookingService(scopeFactory, new NullLogger<BackgroundBookingService>());
@@ -167,7 +166,6 @@ namespace YAP_middle_csharp.Tests
         /// <summary>
         /// Создание брони уменьшает AvailableSeats на 1.
         /// </summary>
-        /// <returns></returns>
         [Fact]
         public async Task CreateBooking_AvailableSeatsDecrement()
         {
@@ -176,11 +174,11 @@ namespace YAP_middle_csharp.Tests
                 TotalSeats = 2,
                 AvailableSeats = 2,
                 Title = "Какой то суперский Ивент",
-                StartAt = DateTime.UtcNow,
+                StartAt = DateTime.UtcNow.AddDays(1),
                 EndAt = DateTime.UtcNow.AddMonths(1)
             };
             var id = await _eventService.CreateAsync(newEvent);
-            var newBooking = await _bookingService.CreateBookingAsync(id);
+            var newBooking = await _bookingService.CreateBookingAsync(id, Guid.NewGuid());
             var updatedEvent = await _eventService.FindByIdAsync(id);
 
             Assert.NotNull(newBooking);
@@ -192,7 +190,6 @@ namespace YAP_middle_csharp.Tests
         /// <summary>
         /// Создание нескольких броней (до лимита) — все успешны, у каждой уникальный Id.
         /// </summary>
-        /// <returns></returns>
         [Fact]
         public async Task CreateMultipleBooking_ToLimitAllSuccess()
         {
@@ -201,12 +198,12 @@ namespace YAP_middle_csharp.Tests
                 TotalSeats = 2,
                 AvailableSeats = 2,
                 Title = "Какой то суперский Ивент",
-                StartAt = DateTime.UtcNow,
+                StartAt = DateTime.UtcNow.AddDays(1),
                 EndAt = DateTime.UtcNow.AddMonths(1)
             };
             var id = await _eventService.CreateAsync(newEvent);
-            var newBooking1 = await _bookingService.CreateBookingAsync(id);
-            var newBooking2 = await _bookingService.CreateBookingAsync(id);
+            var newBooking1 = await _bookingService.CreateBookingAsync(id, Guid.NewGuid());
+            var newBooking2 = await _bookingService.CreateBookingAsync(id, Guid.NewGuid());
             var updatedEvent = await _eventService.FindByIdAsync(id);
 
             Assert.NotNull(newBooking1);
@@ -221,7 +218,6 @@ namespace YAP_middle_csharp.Tests
         /// <summary>
         /// После исчерпания мест следующая попытка выбрасывает NoAvailableSeatsException.
         /// </summary>
-        /// <returns></returns>
         [Fact]
         public async Task CreateOutOfLimitBooking_NoAvailableSeatsExeption()
         {
@@ -230,15 +226,14 @@ namespace YAP_middle_csharp.Tests
                 TotalSeats = 2,
                 AvailableSeats = 2,
                 Title = "Какой то суперский Ивент",
-                StartAt = DateTime.UtcNow,
+                StartAt = DateTime.UtcNow.AddDays(1),
                 EndAt = DateTime.UtcNow.AddMonths(1)
             };
             var id = await _eventService.CreateAsync(newEvent);
-            var newBooking1 = await _bookingService.CreateBookingAsync(id);
-            var newBooking2 = await _bookingService.CreateBookingAsync(id);
-            var updatedEvent = await _eventService.FindByIdAsync(id);
+            await _bookingService.CreateBookingAsync(id, Guid.NewGuid());
+            await _bookingService.CreateBookingAsync(id, Guid.NewGuid());
 
-            var exception = await Assert.ThrowsAsync<NoAvailableSeatsExceptionApp>(() => _bookingService.CreateBookingAsync(id)); 
+            var exception = await Assert.ThrowsAsync<NoAvailableSeatsExceptionApp>(() => _bookingService.CreateBookingAsync(id, Guid.NewGuid()));
             Assert.Equal("Недостаточно мест на событие", exception.Message);
         }
 
@@ -248,7 +243,7 @@ namespace YAP_middle_csharp.Tests
         [Fact]
         public void BookingAfterConfirm_ReturnsConfirmedAndProcessedAt()
         {
-            var booking = new BookingModel(Guid.NewGuid());
+            var booking = new BookingModel(Guid.NewGuid(), Guid.NewGuid());
 
             booking.Status = BookingStatusEnum.Confirmed;
             booking.ProcessedAt = DateTime.UtcNow;
@@ -263,7 +258,7 @@ namespace YAP_middle_csharp.Tests
         [Fact]
         public void Booking_AfterReject_ReturnsRejectedAndProcessedAt()
         {
-            var booking = new BookingModel(Guid.NewGuid());
+            var booking = new BookingModel(Guid.NewGuid(), Guid.NewGuid());
 
             booking.Status = BookingStatusEnum.Rejected;
             booking.ProcessedAt = DateTime.UtcNow;
@@ -283,12 +278,12 @@ namespace YAP_middle_csharp.Tests
                 TotalSeats = 5,
                 AvailableSeats = 5,
                 Title = "Какой то суперский Ивент",
-                StartAt = DateTime.UtcNow,
+                StartAt = DateTime.UtcNow.AddDays(1),
                 EndAt = DateTime.UtcNow.AddMonths(1)
             };
             var id = await _eventService.CreateAsync(newEvent);
 
-            await _bookingService.CreateBookingAsync(id); 
+            await _bookingService.CreateBookingAsync(id, Guid.NewGuid());
             var eventAfterBook = await _eventService.FindByIdAsync(id);
             Assert.Equal(4, eventAfterBook?.AvailableSeats);
 
@@ -296,7 +291,7 @@ namespace YAP_middle_csharp.Tests
             await _eventService.UpdateAsync(eventAfterBook);
 
             var eventAfterRelease = await _eventService.FindByIdAsync(id);
-            Assert.Equal(5, eventAfterRelease?.AvailableSeats); 
+            Assert.Equal(5, eventAfterRelease?.AvailableSeats);
         }
 
         /// <summary>
@@ -310,24 +305,22 @@ namespace YAP_middle_csharp.Tests
                 TotalSeats = 1,
                 AvailableSeats = 1,
                 Title = "Какой то суперский Ивент",
-                StartAt = DateTime.UtcNow,
+                StartAt = DateTime.UtcNow.AddDays(1),
                 EndAt = DateTime.UtcNow.AddMonths(1)
             };
             var id = await _eventService.CreateAsync(newEvent);
 
-            await _bookingService.CreateBookingAsync(id); 
+            await _bookingService.CreateBookingAsync(id, Guid.NewGuid());
 
             var eventModel = await _eventService.FindByIdAsync(id);
             eventModel!.ReleaseSeats(1);
             await _eventService.UpdateAsync(eventModel);
 
-            var newBooking = await _bookingService.CreateBookingAsync(id);
+            var newBooking = await _bookingService.CreateBookingAsync(id, Guid.NewGuid());
 
             Assert.NotNull(newBooking);
             Assert.Equal(BookingStatusEnum.Pending, newBooking.Status);
         }
-
-
 
         [Fact]
         public async Task Highload_ProtectionFromOverbooking_AllowsOnlyLimitCount()
@@ -338,7 +331,7 @@ namespace YAP_middle_csharp.Tests
                 TotalSeats = 5,
                 AvailableSeats = 5,
                 Title = "Какой то суперский Ивент",
-                StartAt = DateTime.UtcNow,
+                StartAt = DateTime.UtcNow.AddDays(1),
                 EndAt = DateTime.UtcNow.AddMonths(1)
             };
             var id = await _eventService.CreateAsync(newEvent);
@@ -354,7 +347,7 @@ namespace YAP_middle_csharp.Tests
 
                 try
                 {
-                    await scopedBookingService.CreateBookingAsync(id);
+                    await scopedBookingService.CreateBookingAsync(id, Guid.NewGuid());
                     Interlocked.Increment(ref successfulBookingsCount);
                 }
                 catch (NoAvailableSeatsExceptionApp)
@@ -376,9 +369,7 @@ namespace YAP_middle_csharp.Tests
         }
 
         /// <summary>
-        /// Тест на уникальность Id при конкурентных запросах:
-        /// Дано: событие на 10 мест, 10 одновременных запросов.
-        /// Ожидается: 10 броней с уникальными Id.
+        /// Тест на уникальность Id при конкурентных запросах.
         /// </summary>
         [Fact]
         public async Task Highload_ConcurrentRequests_GenerateUniqueIds()
@@ -388,7 +379,7 @@ namespace YAP_middle_csharp.Tests
                 TotalSeats = 10,
                 AvailableSeats = 10,
                 Title = "Какой то суперский Ивент",
-                StartAt = DateTime.UtcNow,
+                StartAt = DateTime.UtcNow.AddDays(1),
                 EndAt = DateTime.UtcNow.AddMonths(1)
             };
             var id = await _eventService.CreateAsync(newEvent);
@@ -398,7 +389,7 @@ namespace YAP_middle_csharp.Tests
                 using var scope = _serviceProvider.CreateScope();
                 var scopedBookingService = scope.ServiceProvider.GetRequiredService<IBookingService>();
 
-                return await scopedBookingService.CreateBookingAsync(id);
+                return await scopedBookingService.CreateBookingAsync(id, Guid.NewGuid());
             }));
 
             var results = await Task.WhenAll(tasks);
@@ -414,18 +405,16 @@ namespace YAP_middle_csharp.Tests
         /// <summary>
         /// создание брони для несуществующего события;
         /// </summary>
-        /// <returns></returns>
         [Fact]
         public async Task CreateBooking_ReturnKeyNotFoundException()
         {
             var randomGuid = Guid.NewGuid();
-            await Assert.ThrowsAsync<NotFoundExceptionApp>(() => _bookingService.CreateBookingAsync(randomGuid));
+            await Assert.ThrowsAsync<NotFoundExceptionApp>(() => _bookingService.CreateBookingAsync(randomGuid, Guid.NewGuid()));
         }
 
         /// <summary>
         /// создание брони для удалённого события;
         /// </summary>
-        /// <returns></returns>
         [Fact]
         public async Task CreateBookingToDeletedEvent_ReturnKeyNotFoundException()
         {
@@ -433,20 +422,18 @@ namespace YAP_middle_csharp.Tests
             {
                 TotalSeats = 2,
                 Title = "Какой то суперский Ивент",
-                StartAt = DateTime.UtcNow,
+                StartAt = DateTime.UtcNow.AddDays(1),
                 EndAt = DateTime.UtcNow.AddMonths(1)
             };
             var eventId = await _eventService.CreateAsync(newEvent);
             await _eventService.DeleteAsync(newEvent);
 
-            await Assert.ThrowsAsync<NotFoundExceptionApp>(() => _bookingService.CreateBookingAsync(eventId));
+            await Assert.ThrowsAsync<NotFoundExceptionApp>(() => _bookingService.CreateBookingAsync(eventId, Guid.NewGuid()));
         }
-
 
         /// <summary>
         /// Бронирование для несуществующего события
         /// </summary>
-        /// <returns></returns>
         [Fact]
         public async Task FindByDosentEvent_ReturnNotFoundExceptionApp()
         {
@@ -454,11 +441,9 @@ namespace YAP_middle_csharp.Tests
             await Assert.ThrowsAsync<NotFoundExceptionApp>(() => _bookingService.FindByIdAsync(randomGuid));
         }
 
-
         /// <summary>
         /// Бронирование при отсутствии мест → NoAvailableSeatsException.
         /// </summary>
-        /// <returns></returns>
         [Fact]
         public async Task CreateBookingToAvailableSeats_ReturnNoAvailableSeatsExceptionApp()
         {
@@ -467,14 +452,93 @@ namespace YAP_middle_csharp.Tests
                 TotalSeats = 0,
                 AvailableSeats = 0,
                 Title = "Какой то суперский Ивент",
-                StartAt = DateTime.UtcNow,
+                StartAt = DateTime.UtcNow.AddDays(1),
                 EndAt = DateTime.UtcNow.AddMonths(1)
             };
             var id = await _eventService.CreateAsync(newEvent);
-            var exception = await Assert.ThrowsAsync<NoAvailableSeatsExceptionApp>(() => _bookingService.CreateBookingAsync(id));
+            var exception = await Assert.ThrowsAsync<NoAvailableSeatsExceptionApp>(() => _bookingService.CreateBookingAsync(id, Guid.NewGuid()));
             Assert.Equal("Недостаточно мест на событие", exception.Message);
         }
+
         #endregion
 
+        #region Новые бизнес-правила
+
+        /// <summary>
+        /// Попытка забронировать прошедшее событие приводит к ошибке ValidationExceptionApp.
+        /// </summary>
+        [Fact]
+        public async Task CreateBooking_EventInPast_ThrowsValidationExceptionApp()
+        {
+            var pastEvent = new EventModel
+            {
+                TotalSeats = 10,
+                AvailableSeats = 10,
+                Title = "Прошедшее событие",
+                StartAt = DateTime.UtcNow.AddHours(-2), 
+                EndAt = DateTime.UtcNow.AddHours(2)
+            };
+            var id = await _eventService.CreateAsync(pastEvent);
+
+            await Assert.ThrowsAsync<ValidationExceptionApp>(() => _bookingService.CreateBookingAsync(id, Guid.NewGuid()));
+        }
+
+        /// <summary>
+        /// При достижении лимита активных броней (10) новая бронь не создаётся -> BookingLimitExceededException.
+        /// </summary>
+        [Fact]
+        public async Task CreateBooking_UserLimitExceeded_ThrowsBookingLimitExceededException()
+        {
+            var userId = Guid.NewGuid();
+            var newEvent = new EventModel
+            {
+                TotalSeats = 20,
+                AvailableSeats = 20,
+                Title = "Большое событие",
+                StartAt = DateTime.UtcNow.AddDays(1),
+                EndAt = DateTime.UtcNow.AddDays(2)
+            };
+            var eventId = await _eventService.CreateAsync(newEvent);
+
+            for (int i = 0; i < 10; i++)
+            {
+                await _bookingService.CreateBookingAsync(eventId, userId);
+            }
+
+            await Assert.ThrowsAsync<BookingLimitExceededException>(() => _bookingService.CreateBookingAsync(eventId, userId));
+        }
+
+        /// <summary>
+        /// Лимиты разных пользователей не влияют друг на друга
+        /// </summary>
+        [Fact]
+        public async Task CreateBooking_UserLimitsAreIndependent_SuccessForSecondUser()
+        {
+            var user1 = Guid.NewGuid();
+            var user2 = Guid.NewGuid();
+
+            var newEvent = new EventModel
+            {
+                TotalSeats = 20,
+                AvailableSeats = 20,
+                Title = "Открытое событие",
+                StartAt = DateTime.UtcNow.AddDays(1),
+                EndAt = DateTime.UtcNow.AddDays(2)
+            };
+            var eventId = await _eventService.CreateAsync(newEvent);
+
+            for (int i = 0; i < 10; i++)
+            {
+                await _bookingService.CreateBookingAsync(eventId, user1);
+            }
+
+            await Assert.ThrowsAsync<BookingLimitExceededException>(() => _bookingService.CreateBookingAsync(eventId, user1));
+
+            var user2Booking = await _bookingService.CreateBookingAsync(eventId, user2);
+            Assert.NotNull(user2Booking);
+            Assert.Equal(user2, user2Booking.UserId);
+        }
+        #endregion
     }
+
 }
