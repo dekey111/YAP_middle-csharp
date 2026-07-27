@@ -133,8 +133,7 @@ namespace YAP_middle_csharp.Tests
             await _commandService.DeleteAsync(newEvent);
 
             _context.ChangeTracker.Clear();
-            var result = await _eventService.FindByIdAsync(id);
-            Assert.Null(result);
+            await Assert.ThrowsAsync<NotFoundExceptionApp>(() => _eventService.FindByIdAsync(id));
         }
 
         [Fact]
@@ -220,8 +219,7 @@ namespace YAP_middle_csharp.Tests
         public async Task FailedFindById_ShouldReturnNull_ForNonExistentId()
         {
             var nonExistentId = Guid.NewGuid();
-            var result = await _eventService.FindByIdAsync(nonExistentId);
-            Assert.Null(result);
+            await Assert.ThrowsAsync<NotFoundExceptionApp>(() => _eventService.FindByIdAsync(nonExistentId));
         }
 
         [Fact]

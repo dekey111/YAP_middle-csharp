@@ -31,7 +31,7 @@ namespace YAP_middle_csharp.Tests
 
             services.AddLogging();
             services.AddTransient<IValidator<EventModel>, EventValidator>();
-
+            services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IEventRepository, EventRepository>();
             services.AddScoped<IEventService, EventService>();
             services.AddScoped<IBookingRepository, BookingRepository>();
@@ -399,6 +399,86 @@ namespace YAP_middle_csharp.Tests
             var uniqueIdsCount = results.Select(b => b.Id).Distinct().Count();
             Assert.Equal(10, uniqueIdsCount);
         }
+
+        /// <summary>
+        /// Лимиты разных пользователей не влияют друг на друга
+        /// </summary>
+        [Fact]
+        public async Task CreateBooking_UserLimitsAreIndependent_SuccessForSecondUser()
+        {
+            var user1 = Guid.NewGuid();
+            var user2 = Guid.NewGuid();
+
+            var newEvent = new EventModel
+            {
+                TotalSeats = 20,
+                AvailableSeats = 20,
+                Title = "Открытое событие",
+                StartAt = DateTime.UtcNow.AddDays(1),
+                EndAt = DateTime.UtcNow.AddDays(2)
+            };
+            var eventId = await _eventService.CreateAsync(newEvent);
+
+            for (int i = 0; i < 10; i++)
+            {
+                await _bookingService.CreateBookingAsync(eventId, user1);
+            }
+
+            await Assert.ThrowsAsync<BookingLimitExceededException>(() => _bookingService.CreateBookingAsync(eventId, user1));
+
+            var user2Booking = await _bookingService.CreateBookingAsync(eventId, user2);
+            Assert.NotNull(user2Booking);
+            Assert.Equal(user2, user2Booking.UserId);
+        }
+
+        /// <summary>
+        /// Успешная отмена бронирования самим владельцем.
+        /// </summary>
+        [Fact]
+        public async Task CancelledBookingAsyncByOwner_Success()
+        {
+            var ownerId = Guid.NewGuid();
+            var newEvent = new EventModel
+            {
+                TotalSeats = 5,
+                AvailableSeats = 5,
+                Title = "Событие для отмены",
+                StartAt = DateTime.UtcNow.AddDays(1),
+                EndAt = DateTime.UtcNow.AddDays(2)
+            };
+            var eventId = await _eventService.CreateAsync(newEvent);
+            var booking = await _bookingService.CreateBookingAsync(eventId, ownerId);
+
+            await _bookingService.CancelledBookingAsync(eventId, booking.Id, ownerId, UserRoleEnum.User);
+
+            var cancelledBooking = await _bookingService.FindByIdAsync(booking.Id);
+            Assert.Equal(BookingStatusEnum.Cancelled, cancelledBooking.Status);
+        }
+
+        /// <summary>
+        /// Успешная отмена бронирования администратором.
+        /// </summary>
+        [Fact]
+        public async Task CancelledBookingAsyncByAdmin_Success()
+        {
+            var ownerId = Guid.NewGuid();
+            var adminId = Guid.NewGuid();
+            var newEvent = new EventModel
+            {
+                TotalSeats = 5,
+                AvailableSeats = 5,
+                Title = "Событие для отмены админом",
+                StartAt = DateTime.UtcNow.AddDays(1),
+                EndAt = DateTime.UtcNow.AddDays(2)
+            };
+            var eventId = await _eventService.CreateAsync(newEvent);
+            var booking = await _bookingService.CreateBookingAsync(eventId, ownerId);
+
+            await _bookingService.CancelledBookingAsync(eventId, booking.Id, adminId, UserRoleEnum.Admin);
+
+            var cancelledBooking = await _bookingService.FindByIdAsync(booking.Id);
+            Assert.Equal(BookingStatusEnum.Cancelled, cancelledBooking.Status);
+        }
         #endregion
 
         #region Неуспешные
@@ -460,22 +540,18 @@ namespace YAP_middle_csharp.Tests
             Assert.Equal("Недостаточно мест на событие", exception.Message);
         }
 
-        #endregion
-
-        #region Новые бизнес-правила
-
         /// <summary>
         /// Попытка забронировать прошедшее событие приводит к ошибке ValidationExceptionApp.
         /// </summary>
         [Fact]
-        public async Task CreateBooking_EventInPast_ThrowsValidationExceptionApp()
+        public async Task CreateBooking_ThrowsValidationExceptionApp()
         {
             var pastEvent = new EventModel
             {
                 TotalSeats = 10,
                 AvailableSeats = 10,
                 Title = "Прошедшее событие",
-                StartAt = DateTime.UtcNow.AddHours(-2), 
+                StartAt = DateTime.UtcNow.AddHours(-2),
                 EndAt = DateTime.UtcNow.AddHours(2)
             };
             var id = await _eventService.CreateAsync(pastEvent);
@@ -487,7 +563,7 @@ namespace YAP_middle_csharp.Tests
         /// При достижении лимита активных броней (10) новая бронь не создаётся -> BookingLimitExceededException.
         /// </summary>
         [Fact]
-        public async Task CreateBooking_UserLimitExceeded_ThrowsBookingLimitExceededException()
+        public async Task CreateBooking_ThrowsBookingLimitExceededException()
         {
             var userId = Guid.NewGuid();
             var newEvent = new EventModel
@@ -509,36 +585,26 @@ namespace YAP_middle_csharp.Tests
         }
 
         /// <summary>
-        /// Лимиты разных пользователей не влияют друг на друга
+        /// Попытка отмены чужой брони сторонним пользователем приводит к UnauthorizedOperationException
         /// </summary>
         [Fact]
-        public async Task CreateBooking_UserLimitsAreIndependent_SuccessForSecondUser()
+        public async Task CancelledBookingAsync_ThrowsUnauthorizedOperationException()
         {
-            var user1 = Guid.NewGuid();
-            var user2 = Guid.NewGuid();
-
+            var ownerId = Guid.NewGuid();
+            var strangerId = Guid.NewGuid();
             var newEvent = new EventModel
             {
-                TotalSeats = 20,
-                AvailableSeats = 20,
-                Title = "Открытое событие",
+                TotalSeats = 5,
+                AvailableSeats = 5,
+                Title = "Чужая бронь",
                 StartAt = DateTime.UtcNow.AddDays(1),
                 EndAt = DateTime.UtcNow.AddDays(2)
             };
             var eventId = await _eventService.CreateAsync(newEvent);
+            var booking = await _bookingService.CreateBookingAsync(eventId, ownerId);
 
-            for (int i = 0; i < 10; i++)
-            {
-                await _bookingService.CreateBookingAsync(eventId, user1);
-            }
-
-            await Assert.ThrowsAsync<BookingLimitExceededException>(() => _bookingService.CreateBookingAsync(eventId, user1));
-
-            var user2Booking = await _bookingService.CreateBookingAsync(eventId, user2);
-            Assert.NotNull(user2Booking);
-            Assert.Equal(user2, user2Booking.UserId);
+            await Assert.ThrowsAsync<UnauthorizedOperationException>(() => _bookingService.CancelledBookingAsync(eventId, booking.Id, strangerId, UserRoleEnum.User));
         }
         #endregion
     }
-
 }
