@@ -24,33 +24,32 @@ namespace YAP_middle_csharp.Application.Services
 
         public async Task RegisterAsync(string login, string password, UserRoleEnum role)
         {
-            var existingUser = await _userRepository.FindByLoginAsync(login);
-            if (existingUser != null)
+            var findUser = await _userRepository.FindByLoginAsync(login);
+            if (findUser != null)
             {
                 throw new ValidationExceptionApp("Пользователь с таким логином уже существует");
             }
 
-            var passwordHash = _passwordHasher.HasPassword(password);
-
+            var passwordHash = _passwordHasher.HashPassword(password);
             var newUser = new UserModel(login, passwordHash, role);
             await _userRepository.CreateAsync(newUser);
         }
 
         public async Task<string> LoginAsync(string login, string password)
         {
-            var user = await _userRepository.FindByLoginAsync(login);
-            if (user == null)
+            var findUser = await _userRepository.FindByLoginAsync(login);
+            if (findUser == null)
             {
                 throw new ValidationExceptionApp("Неверный логин или пароль");
             }
 
-            bool isPasswordValid = _passwordHasher.CheckPassword(password, user.PasswordHash);
+            bool isPasswordValid = _passwordHasher.CheckPassword(findUser, password);
             if (!isPasswordValid)
             {
                 throw new ValidationExceptionApp("Неверный логин или пароль");
             }
 
-            return _jwtTokenGenerator.GenerateToken(user);
+            return _jwtTokenGenerator.GenerateToken(findUser);
         }
     }
 }

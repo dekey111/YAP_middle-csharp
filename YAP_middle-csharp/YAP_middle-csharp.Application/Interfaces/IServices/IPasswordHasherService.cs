@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using YAP_middle_csharp.Domain.Models;
 
 namespace YAP_middle_csharp.Application.Interfaces.IServices
 {
     public interface IPasswordHasherService
     {
-        string HasPassword(string password);
-        bool CheckPassword(string password, string hasPassword);
+        string HashPassword(string password);
+        bool CheckPassword(UserModel user, string password);
     }
 }
