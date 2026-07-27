@@ -1,7 +1,10 @@
-﻿using Microsoft.AspNetCore.Identity.Data;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using YAP_middle_csharp.Application.Interfaces.IServices;
 using YAP_middle_csharp.Application.Models;
+using YAP_middle_csharp.Domain.Models;
+using LoginRequest = YAP_middle_csharp.Application.Models.LoginRequest;
+using RegisterRequest = YAP_middle_csharp.Application.Models.RegisterRequest;
 
 namespace YAP_middle_csharp.Controllers
 {
@@ -18,14 +21,32 @@ namespace YAP_middle_csharp.Controllers
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        [HttpPost("register")]
+        [HttpPost("registerUser")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> RegisterAsync([FromBody] Application.Models.RegisterRequest request)
+        public async Task<IActionResult> RegisterStandartUserAsync([FromBody] RegisterRequest request)
         {
             _logger.LogInformation("[AuthController] Запрос на регистрацию пользователя: {Login}", request.Login);
 
-            await _userService.RegisterAsync(request.Login, request.Password, request.UserRole);
+            await _userService.RegisterAsync(request.Login, request.Password, UserRoleEnum.User);
+            return Ok(new { message = "Регистрация успешно завершена" });
+        }
+
+
+        /// <summary>
+        /// Регистрация нового пользователя
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost("registerAdmin")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> RegisterAdminAsync([FromBody] RegisterRequest request)
+        {
+            _logger.LogInformation("[AuthController] Запрос на регистрацию администратора: {Login}", request.Login);
+
+            await _userService.RegisterAdminAsync(request.Login, request.Password, UserRoleEnum.Admin);
             return Ok(new { message = "Регистрация успешно завершена" });
         }
 
@@ -37,7 +58,7 @@ namespace YAP_middle_csharp.Controllers
         [HttpPost("login")]
         [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> LoginAsync([FromBody] Application.Models.LoginRequest request)
+        public async Task<IActionResult> LoginAsync([FromBody] LoginRequest request)
         {
             _logger.LogInformation("[AuthController] Запрос на вход пользователя: {Login}", request.Login);
 

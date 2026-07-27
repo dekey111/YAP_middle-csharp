@@ -9,6 +9,5 @@ namespace YAP_middle_csharp.Application.Models
     {
         public string Login { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
-        public UserRoleEnum UserRole { get; set; }
     }
 }
