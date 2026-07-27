@@ -34,7 +34,7 @@ namespace YAP_middle_csharp.Controllers
 
 
         /// <summary>
-        /// Регистрация нового пользователя
+        /// Регистрация нового администратора
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
@@ -46,7 +46,7 @@ namespace YAP_middle_csharp.Controllers
         {
             _logger.LogInformation("[AuthController] Запрос на регистрацию администратора: {Login}", request.Login);
 
-            await _userService.RegisterAdminAsync(request.Login, request.Password, UserRoleEnum.Admin);
+            await _userService.RegisterAsync(request.Login, request.Password, UserRoleEnum.Admin);
             return Ok(new { message = "Регистрация успешно завершена" });
         }
 
