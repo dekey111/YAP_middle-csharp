@@ -17,6 +17,7 @@ namespace YAP_middle_csharp.Application
             services.AddScoped<IBookingService, BookingService>();
             services.AddScoped<IPasswordHasherService, PasswordHasherService>();
             services.AddScoped<IPasswordHasher<UserModel>, PasswordHasher<UserModel>>();
+            services.AddScoped<IUserContextService, UserContextService>();
             services.AddScoped<IUserService, UserService>();
 
             services.AddTransient<IValidator<EventModel>, EventValidator>();

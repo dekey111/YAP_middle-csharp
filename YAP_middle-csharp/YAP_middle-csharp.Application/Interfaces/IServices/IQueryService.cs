@@ -13,7 +13,7 @@ namespace YAP_middle_csharp.Application.Interfaces.IServices
         /// </summary>
         /// <param name="id">уникальной идентификатор</param>
         /// <returns>Возвращает найденную сущность или null, если ничего не найдено</returns>
-        Task<T?> FindByIdAsync(Guid id);
+        Task<T> FindByIdAsync(Guid id);
 
         /// <summary>
         /// Получение списка сущностей с поддержкой фильтрации и пагинации

@@ -59,15 +59,19 @@ namespace YAP_middle_csharp.Application.Services
         /// Метод получения конкретного события по id
         /// </summary>
         /// <param name="id">Уникальный идентификатор события</param>
-        /// <returns>Возвращает экземпляр EventModel в случае нахождения в противном случае null </returns>
-        public async Task<EventModel?> FindByIdAsync(Guid id)
+        /// <returns>Возвращает экземпляр EventModel</returns>
+        /// <exception cref="NotFoundExceptionApp">В случае если событие не найдено</exception>
+        public async Task<EventModel> FindByIdAsync(Guid id)
         {
             _logger.LogDebug("[EventService] [FindById] Попытка найти Event с ID = {id}", id);
             
             var findEvent = await _repository.FindByIdAsync(id);
-
-            var comment = findEvent is null ? "Не получилось" : "Получилось";
-            _logger.LogInformation($"[EventService] [FindById] {comment} найти Event с ID = {id}", id);
+            if(findEvent == null)
+            {
+                _logger.LogWarning("[BookingService] [FindByIdAsync] Событие {id} не найдено", id);
+                throw new NotFoundExceptionApp($"Событие не найдено");
+            }
+            _logger.LogDebug($"[EventService] [FindById] Получилось найти Event с ID = {id}", id);
 
             return findEvent;
         }

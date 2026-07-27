@@ -14,11 +14,13 @@ namespace YAP_middle_csharp.Application.Services
     /// <param name="logger">Принимает логгер</param>
     public class BookingService(IBookingRepository repository,
         ILogger<BookingService> logger,
-        IEventService eventService ) : IBookingService
+        IEventService eventService,
+        IUserRepository userRepository) : IBookingService
     {
         private readonly ILogger<BookingService> _logger = logger;
         private readonly IBookingRepository _repository = repository;
         private readonly IEventService _eventService = eventService;
+        private readonly IUserRepository _userRepository = userRepository;
 
         private readonly static SemaphoreSlim _bookingSemaphore = new (1, 1);
         private readonly static SemaphoreSlim _bookingCancelledSemaphore = new (1, 1);
@@ -70,23 +72,54 @@ namespace YAP_middle_csharp.Application.Services
             return await _repository.FindPendingBookingsAsync();
         }
 
+
         /// <summary>
-        /// Метод получения конкретной брони по id
+        /// Метод получения брони без проверки прав доступа
         /// </summary>
-        /// <param name="id">Уникальный идентификатор брони</param>
-        /// <returns>Возвращает экземпляр BookingModel в случае нахождения в противном случае null </returns>
-        public async Task<BookingModel?> FindByIdAsync(Guid id)
+        /// <param name="id">Уникальный идентификатор бронирования</param>
+        /// <returns>Возвращает найденную бронь или 400</returns>
+        public async Task<BookingModel> FindByIdAsync(Guid id)
         {
-            _logger.LogDebug("[BookingService] [FindById] Попытка найти Booking с ID = {id}", id);
+            _logger.LogDebug("[BookingService] [FindByIdAsync] Попытка найти Booking с ID = {id}", id);
 
             var findBooking = await _repository.FindByIdAsync(id);
             if (findBooking == null)
             {
-                _logger.LogWarning("[BookingService] [FindById] Бронь {BookingId} не найдена", id);
+                _logger.LogWarning("[BookingService] [FindByIdAsync] Бронь {BookingId} не найдена", id);
                 throw new NotFoundExceptionApp($"Бронь не найдена");
             }
-            _logger.LogInformation($"[BookingService] [FindById] Получилось найти Booking с ID = {id}", id);
 
+            _logger.LogInformation($"[BookingService] [FindByIdAsync] Получилось найти Booking с ID = {id}", id);
+            return findBooking;
+        }
+
+        /// <summary>
+        /// Метод получения брони по УИ с проверкой прав доступа
+        /// </summary>
+        /// <param name="id">Уникальный идентификатор бронирования</param>
+        /// <param name="idUserFromRequest">Уникальный идентификатор пользователя запроса</param>
+        /// <returns>Возвращает найденную бронь или 400</returns>
+        public async Task<BookingModel?> FindByIdForUserAsync(Guid id, Guid idUserFromRequest)
+        {
+            _logger.LogDebug("[BookingService] [FindByIdForUserAsync] Попытка найти Booking с ID = {id}", id);
+
+            var findUser = await _userRepository.FindByIdAsync(idUserFromRequest);
+            if (findUser == null)
+            {
+                _logger.LogWarning("[BookingService] [FindByIdForUserAsync] Пользователь: {idUserFromRequest} запроса не найден!", idUserFromRequest);
+                throw new NotFoundExceptionApp($"Бронь не найдена");
+            }
+
+            var findBooking = await FindByIdAsync(id);
+
+            if (findUser.UserRole != UserRoleEnum.Admin && findBooking.UserId != idUserFromRequest)
+            {
+                _logger.LogWarning("[BookingService] [FindByIdForUserAsync] Пользователь: {idUserFromRequest}, пытается получить чужое бронирование", idUserFromRequest);
+                throw new NotFoundExceptionApp($"Ошибка получения бронирования");
+            }
+
+
+            _logger.LogInformation($"[BookingService] [FindByIdForUserAsync] Получилось найти Booking с ID = {id}", id);
             return findBooking;
         }
 

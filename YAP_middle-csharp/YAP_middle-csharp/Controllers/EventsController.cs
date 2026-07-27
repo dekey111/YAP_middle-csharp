@@ -12,10 +12,12 @@ namespace YAP_middle_csharp.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
-    public class EventsController(IEventService eventService,
+    public class EventsController(IUserContextService userContext, 
+        IEventService eventService,
         IBookingService bookingService,
         ILogger<EventsController> logger) : ControllerBase
     {
+        private readonly IUserContextService _userContext = userContext;
         private readonly IEventService _eventService = eventService;
         private readonly IBookingService _bookingService = bookingService;
         private readonly ILogger<EventsController> _logger = logger;
@@ -114,7 +116,7 @@ namespace YAP_middle_csharp.Controllers
         public async Task<IActionResult> AddBookingByEventIdAsync([FromRoute] Guid eventId)
         {
 
-            var userId = GetCurrentUserId();
+            var userId = _userContext.GetCurrentUserId(User);
 
             _logger.LogInformation("[EventsController] [AddBookingByEventId] Запрос на бронирование события {EventId}", eventId);
             var newBooking = await _bookingService.CreateBookingAsync(eventId, userId);
@@ -145,8 +147,8 @@ namespace YAP_middle_csharp.Controllers
             [FromRoute] Guid eventId,
             [FromRoute] Guid bookingId) 
         {
-            var currentUserId = GetCurrentUserId();
-            var currentUserRole = GetCurrentUserRole();
+            var currentUserId = _userContext.GetCurrentUserId(User);
+            var currentUserRole = _userContext.GetCurrentUserRole(User);
 
             _logger.LogInformation("[EventsController] [CancelBookingAsync] Запрос на отмену брони {BookingId} для события {EventId}", bookingId, eventId);
 
@@ -196,33 +198,6 @@ namespace YAP_middle_csharp.Controllers
 
             await _eventService.DeleteAsync(id);
             return NoContent();
-        }
-
-
-
-        private Guid GetCurrentUserId()
-        {
-            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                           ?? User.FindFirst("sub")?.Value;
-
-            if (!Guid.TryParse(userIdClaim, out var currentUserId))
-            {
-                throw new UnauthorizedOperationException();
-            }
-
-            return currentUserId;
-        }
-        private UserRoleEnum GetCurrentUserRole()
-        {
-            var roleClaim = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
-                         ?? User.FindFirst("role")?.Value;
-
-            if (Enum.TryParse<UserRoleEnum>(roleClaim, true, out var role))
-            {
-                return role;
-            }
-
-            return UserRoleEnum.User;
         }
     }
 }
