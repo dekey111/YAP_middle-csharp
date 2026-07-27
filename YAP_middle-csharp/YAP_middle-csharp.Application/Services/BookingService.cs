@@ -314,10 +314,10 @@ namespace YAP_middle_csharp.Application.Services
                     throw new ValidationExceptionApp("Бронирование нельзя отменить, потому что оно уже обработано");
                 }
 
-                if (DateTime.UtcNow >= findEvent.EndAt)
+                if (DateTime.UtcNow >= findEvent.StartAt)
                 {
-                    _logger.LogWarning("[BookingService] [CancelledBookingAsync] Срок регистрации на событие истек {eventId}", eventId);
-                    throw new ValidationExceptionApp("Бронирование нельзя отменить, потому что cрок регистрации на событие истек");
+                    _logger.LogWarning("[BookingService] [CancelledBookingAsync] Попытка отмены брони после начала события {EventId}", eventId);
+                    throw new ValidationExceptionApp("Нельзя отменить бронирование после начала или завершения события");
                 }
 
                 findBooking.Cancel();
