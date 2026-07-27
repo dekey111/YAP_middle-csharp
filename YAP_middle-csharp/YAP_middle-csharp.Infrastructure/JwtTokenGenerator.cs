@@ -19,7 +19,7 @@ namespace YAP_middle_csharp.Application.Services
 
         public string GenerateToken(UserModel user)
         {
-            var secret = _configuration["JwtSettings:Secret"] ?? throw new InvalidOperationException("JWT Secret is not configured");
+            var secret = _configuration["JwtSettings:SecretKey"] ?? throw new InvalidOperationException("JWT Secret is not configured");
             var issuer = _configuration["JwtSettings:Issuer"];
             var audience = _configuration["JwtSettings:Audience"];
             var expiryMinutes = double.Parse(_configuration["JwtSettings:ExpiryMinutes"] ?? "60");
