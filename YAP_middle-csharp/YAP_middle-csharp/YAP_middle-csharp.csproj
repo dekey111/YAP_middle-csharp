@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>YAP_middle_csharp</RootNamespace>
+    <UserSecretsId>e072c450-ff42-41f7-9816-38597d8cfec7</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
