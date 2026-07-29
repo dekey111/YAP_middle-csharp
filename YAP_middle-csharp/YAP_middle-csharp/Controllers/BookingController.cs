@@ -23,7 +23,7 @@ namespace YAP_middle_csharp.Controllers
         /// <param name="id">Принимает Уникальный идентификатор брони</param>
         /// <returns>Возвращает бронь</returns>
         /// <exception cref="NotFoundExceptionApp"></exception>
-        [HttpGet("/bookings/{id:guid}")]
+        [HttpGet("{id:guid}")]
         [Authorize]
         [ProducesResponseType(typeof(BookingModel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]

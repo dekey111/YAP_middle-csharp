@@ -130,7 +130,7 @@ namespace YAP_middle_csharp.Controllers
                 userId = newBooking.UserId
             };
 
-            return AcceptedAtAction("GetBookingAsync", "Booking", new { id = newBooking.Id }, bookingResponse);
+            return AcceptedAtAction(nameof(BookingController.GetBookingAsync), "Booking", new { id = newBooking.Id }, bookingResponse);
         }
 
 
