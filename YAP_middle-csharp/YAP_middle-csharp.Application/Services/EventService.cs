@@ -122,25 +122,25 @@ namespace YAP_middle_csharp.Application.Services
         /// <returns>Возвращает обновлённую модель</returns>
         /// <exception cref="ValidationExceptionApp">Выбрасывается, в случае если модель пустая</exception>
         /// <exception cref="NotFoundExceptionApp">Выбрасывается в случае, если такого события по ID не найдено</exception>
-        public async Task<EventModel> UpdateAsync(EventResponse eventResponse)
+        public async Task<EventModel> UpdateAsync(Guid id, EventUpdateRequest eventUpdateRequest)
         {
-            if (eventResponse is null)
+            if (eventUpdateRequest is null)
             {
                 throw new ValidationExceptionApp("Данные для обновления не могут быть пустыми");
             }
 
-            var findEvent = await _repository.FindByIdAsync(eventResponse.Id);
+            var findEvent = await _repository.FindByIdAsync(id);
             if (findEvent is null)
             {
-                _logger.LogError("[EventService] [Update] Event ID: {id} не найдено!", eventResponse.Id);
+                _logger.LogError("[EventService] [Update] Event ID: {id} не найдено!", id);
                 throw new NotFoundExceptionApp("Event не найден!");
             }
 
-            findEvent.Title = eventResponse.Title;
-            findEvent.Description = eventResponse.Description;
-            findEvent.TotalSeats = eventResponse.TotalSeats;
-            findEvent.StartAt = eventResponse.StartAt;
-            findEvent.EndAt = eventResponse.EndAt;
+            findEvent.Title = eventUpdateRequest.Title;
+            findEvent.Description = eventUpdateRequest.Description;
+            findEvent.TotalSeats = eventUpdateRequest.TotalSeats;
+            findEvent.StartAt = eventUpdateRequest.StartAt;
+            findEvent.EndAt = eventUpdateRequest.EndAt;
 
             var errors = _validator.GetErrors(findEvent).ToList();
             if (errors.Any())

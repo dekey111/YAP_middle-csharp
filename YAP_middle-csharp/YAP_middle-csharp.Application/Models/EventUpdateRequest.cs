@@ -6,10 +6,9 @@ namespace YAP_middle_csharp.Application.Models
     /// <summary>
     /// Кастомная модель событий для обновления/удаления модели
     /// </summary>
-    public class EventResponse
+    public class EventUpdateRequest
     {
-        public EventResponse() { }
-        public Guid Id { get; set; }
+        public EventUpdateRequest() { }
 
         [StringLength(100, MinimumLength = 2, ErrorMessage = "Наименование должно быть от 2 до 100 символов")]
         public string Title { get; set; } = string.Empty;
@@ -24,9 +23,8 @@ namespace YAP_middle_csharp.Application.Models
         [Range(typeof(DateTime), "2010-01-01", "2030-12-31", ErrorMessage = "Некорректная дата")]
         public DateTime EndAt { get; set; }
 
-        public EventResponse(EventModel eventModel)
+        public EventUpdateRequest(EventModel eventModel)
         {
-            Id = eventModel.Id;
             Title = eventModel.Title;
             Description = eventModel.Description;
             TotalSeats = eventModel.TotalSeats;

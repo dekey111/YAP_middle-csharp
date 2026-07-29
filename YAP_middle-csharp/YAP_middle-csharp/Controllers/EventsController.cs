@@ -33,7 +33,7 @@ namespace YAP_middle_csharp.Controllers
         /// <returns>Возвращается Json-Структуру и статусом 200-OK в случае успеха</returns>
         /// <returns>Возвращает 400 в случае ошибки получения страниц или количество элементов на странице</returns>
         [HttpGet]
-        [ProducesResponseType(typeof(IEnumerable<EventResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(IEnumerable<EventUpdateRequest>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetAllEventsAsync(
             [FromQuery] string? title,
@@ -45,9 +45,9 @@ namespace YAP_middle_csharp.Controllers
             _logger.LogDebug("[EventsController] [GetAllEvents]");
 
             var result = await _eventService.FindAllAsync(title, from, to, page, pageSize);
-            var respondedItems = result.Items.Select(e => new EventResponse(e));
+            var respondedItems = result.Items.Select(e => new EventUpdateRequest(e));
 
-            return Ok(new PaginatedResult<EventResponse>
+            return Ok(new PaginatedResult<EventUpdateRequest>
             {
                 Items = respondedItems,
                 TotalCount = result.TotalCount,
@@ -62,7 +62,7 @@ namespace YAP_middle_csharp.Controllers
         /// <param name="id">Принимает существующий id из списка событий</param>
         /// <returns>Возвращает статус 200 и найденный элемент, либо 404 с комментарием</returns>
         [HttpGet("{id:Guid}")]
-        [ProducesResponseType(typeof(EventResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(EventUpdateRequest), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetEventByIdAsync([FromRoute] Guid id)
         {
@@ -75,7 +75,7 @@ namespace YAP_middle_csharp.Controllers
                 throw new KeyNotFoundException($"Event c id: {id} не найден!");
             }
 
-            return Ok(new EventResponse(findEvent));
+            return Ok(new EventUpdateRequest(findEvent));
         }
 
         /// <summary>
@@ -86,14 +86,14 @@ namespace YAP_middle_csharp.Controllers
         /// <returns>Возвращает 400 в случае ошибки валидации события</returns>
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        [ProducesResponseType(typeof(EventResponse), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(EventUpdateRequest), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> AddEventAsync([FromBody] EventRequest eventRequest)
         {
             _logger.LogDebug("[EventsController] [AddEvent] Запрос на добавление нового события");
 
             var createdEvent = await _eventService.CreateAsync(eventRequest);
-            var newEventResponse = new EventResponse(createdEvent);
+            var newEventResponse = new EventUpdateRequest(createdEvent);
 
             return CreatedAtAction(nameof(GetEventByIdAsync), new { id = createdEvent.Id }, newEventResponse);
         }
@@ -164,20 +164,14 @@ namespace YAP_middle_csharp.Controllers
         /// <returns>Возвращает - 404 В случае если событие не найдено</returns>
         [HttpPut("{id:Guid}")]
         [Authorize(Roles = "Admin")]
-        [ProducesResponseType(typeof(EventResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(EventUpdateRequest), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> EditEventAsync([FromRoute] Guid id, [FromBody] EventResponse eventResponse)
+        public async Task<IActionResult> EditEventAsync([FromRoute] Guid id, [FromBody] EventUpdateRequest eventUpdateRequest)
         {
             _logger.LogInformation("[EventsController] [EditEvent] Запрос на изменения события {EventId}", id);
-
-            if (id != eventResponse.Id)
-            {
-                throw new ValidationExceptionApp("Проблема в сущности и в запросе. Проверьте правильность данных!");
-            }
-
-            var updatedEvent = await _eventService.UpdateAsync(eventResponse);
-            return Ok(new EventResponse(updatedEvent));
+            var updatedEvent = await _eventService.UpdateAsync(id, eventUpdateRequest);
+            return Ok(new EventUpdateRequest(updatedEvent));
         }
 
         /// <summary>
@@ -188,7 +182,7 @@ namespace YAP_middle_csharp.Controllers
         /// <returns>Возвращает - 404 В случае если событие не найдено</returns>
         [HttpDelete("{id:Guid}")]
         [Authorize(Roles = "Admin")]
-        [ProducesResponseType(typeof(EventResponse), StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(EventUpdateRequest), StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteEventAsync([FromRoute] Guid id)
         {
