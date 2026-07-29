@@ -42,10 +42,16 @@
   
 ## Настройка Запуск проекта
 1. Склонировать репозиторий
-2. Укажите актуальные данные для подключения к вашей БД в файле `appsettings.json` (в секции `ConnectionStrings:DefaultConnection`).
+2. Инициировать UserSecret. (Описано ниже)
 3. Запустить приложение dotnet run
 4. Для Swagger использовать путь: localhost:/[port]/swagger
 5. При старте приложения в классе Program.cs автоматически вызывается метод db.Database.Migrate(), который создает базу данных и накатывает все недостающие миграции
+
+### Настройка User Secrets
+Параметр `JwtSettings:SecretKey` и "ConnectionStrings:DefaultConnection" является обязательными для запуска приложения (длина ключа должна быть не менее 32 байт)
+dotnet user-secrets init --project YAP_middle_csharp
+dotnet user-secrets set "JwtSettings:SecretKey" "your_super_secret_key_at_least_32_characters_long_12345" --project YAP_middle_csharp
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=EventApi;Username=postgres;Password=your_password" --project YAP_middle_csharp
 
 ### Управление миграциями
 Если вам необходимо внести изменения в схему БД, используйте следующие команды:
