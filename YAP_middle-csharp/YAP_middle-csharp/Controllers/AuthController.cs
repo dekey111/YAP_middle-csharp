@@ -23,7 +23,7 @@ namespace YAP_middle_csharp.Controllers
         [HttpPost("register-user")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> RegisterStandartUserAsync([FromBody] RegisterRequest request)
+        public async Task<IActionResult> RegisterUserAsync([FromBody] RegisterRequest request)
         {
             _logger.LogInformation("[AuthController] Запрос на регистрацию пользователя: {Login}", request.Login);
 
