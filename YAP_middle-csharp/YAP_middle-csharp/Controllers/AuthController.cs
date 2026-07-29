@@ -9,7 +9,7 @@ using RegisterRequest = YAP_middle_csharp.Application.Models.RegisterRequest;
 namespace YAP_middle_csharp.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/auth")]
     [Produces("application/json")]
     public class AuthController(IUserService userService, ILogger<AuthController> logger) : ControllerBase
     {
@@ -19,45 +19,43 @@ namespace YAP_middle_csharp.Controllers
         /// <summary>
         /// Регистрация нового пользователя
         /// </summary>
-        /// <param name="request"></param>
-        /// <returns></returns>
+        /// <param name="request">Принимает данные регистрации пользователя</param>
         [HttpPost("registerUser")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> RegisterStandartUserAsync([FromBody] RegisterRequest request)
         {
             _logger.LogInformation("[AuthController] Запрос на регистрацию пользователя: {Login}", request.Login);
 
             await _userService.RegisterAsync(request.Login, request.Password, UserRoleEnum.User);
-            return Ok(new { message = "Регистрация успешно завершена" });
+            return NoContent();
         }
 
 
         /// <summary>
         /// Регистрация нового администратора
         /// </summary>
-        /// <param name="request"></param>
-        /// <returns></returns>
+        /// <param name="request">Принимает данные регистрации пользователя</param>
         [HttpPost("registerAdmin")]
         [Authorize(Roles = "Admin")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> RegisterAdminAsync([FromBody] RegisterRequest request)
         {
             _logger.LogInformation("[AuthController] Запрос на регистрацию администратора: {Login}", request.Login);
 
             await _userService.RegisterAsync(request.Login, request.Password, UserRoleEnum.Admin);
-            return Ok(new { message = "Регистрация успешно завершена" });
+            return NoContent();
         }
 
         /// <summary>
         /// Аутентификация пользователя и выдача токена
         /// </summary>
-        /// <param name="request"></param>
-        /// <returns></returns>
+        /// <param name="request">Принимает данные авторизации</param>
+        /// <returns>Возвращает JWT токен</returns>
         [HttpPost("login")]
         [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> LoginAsync([FromBody] LoginRequest request)
         {
             _logger.LogInformation("[AuthController] Запрос на вход пользователя: {Login}", request.Login);

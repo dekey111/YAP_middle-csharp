@@ -40,13 +40,13 @@ namespace YAP_middle_csharp.Application.Services
             var findUser = await _userRepository.FindByLoginAsync(login);
             if (findUser == null)
             {
-                throw new ValidationExceptionApp("Неверный логин или пароль");
+                throw new NotFoundExceptionApp("Неверный логин или пароль");
             }
 
             bool isPasswordValid = _passwordHasher.CheckPassword(findUser, password);
             if (!isPasswordValid)
             {
-                throw new ValidationExceptionApp("Неверный логин или пароль");
+                throw new NotFoundExceptionApp("Неверный логин или пароль");
             }
 
             return _jwtTokenGenerator.GenerateToken(findUser);
