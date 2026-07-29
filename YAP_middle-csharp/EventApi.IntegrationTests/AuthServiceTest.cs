@@ -1,9 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using YAP_middle_csharp.Application.Interfaces.IServices;
 using YAP_middle_csharp.Application.Services;
 using YAP_middle_csharp.Domain.Exceptions;
@@ -38,7 +35,6 @@ namespace EventApi.IntegrationTests
 
             _repository = new UserRepository(_context);
 
-            // Настраиваем зависимости для IUserService поверх реальной базы Postgres
             var identityHasher = new PasswordHasher<UserModel>();
             var passwordHasherService = new PasswordHasherService(identityHasher);
 
