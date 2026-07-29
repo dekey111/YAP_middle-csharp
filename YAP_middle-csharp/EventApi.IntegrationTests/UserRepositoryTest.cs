@@ -9,13 +9,13 @@ using YAP_middle_csharp.Infrastructure.Repository;
 namespace EventApi.IntegrationTests
 {
     [Collection("PostgresCollection")]
-    public class UserServiceTest : IAsyncLifetime
+    public class UserRepositoryTest : IAsyncLifetime
     {
         private readonly PostgresFixture _fixture;
         private AppDbContext _context = null!;
         private UserRepository _repository = null!;
 
-        public UserServiceTest(PostgresFixture fixture)
+        public UserRepositoryTest(PostgresFixture fixture)
         {
             _fixture = fixture;
         }
