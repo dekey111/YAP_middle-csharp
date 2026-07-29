@@ -1,7 +1,7 @@
-﻿using YAP_middle_csharp.Application.Interfaces;
-using YAP_middle_csharp.Application.Interfaces.IRepositories;
+﻿using YAP_middle_csharp.Application.Interfaces.IRepositories;
 using YAP_middle_csharp.Application.Interfaces.IServices;
 using YAP_middle_csharp.Domain.Exceptions;
+using YAP_middle_csharp.Domain.Interface;
 using YAP_middle_csharp.Domain.Models;
 
 namespace YAP_middle_csharp.Application.Services
@@ -22,6 +22,14 @@ namespace YAP_middle_csharp.Application.Services
             _jwtTokenGenerator = jwtTokenGenerator;
         }
 
+        /// <summary>
+        /// Регистрация нового пользователя
+        /// </summary>
+        /// <param name="login">Принимает логин</param>
+        /// <param name="password">Принимает пароль</param>
+        /// <param name="role">Принимает роль</param>
+        /// <returns>Возвращает нового пользователя</returns>
+        /// <exception cref="ValidationExceptionApp">В случае если такой логин уже существует</exception>
         public async Task RegisterAsync(string login, string password, UserRoleEnum role)
         {
             var findUser = await _userRepository.FindByLoginAsync(login);
@@ -35,18 +43,25 @@ namespace YAP_middle_csharp.Application.Services
             await _userRepository.CreateAsync(newUser);
         }
 
+        /// <summary>
+        /// Метод авторизации пользователя
+        /// </summary>
+        /// <param name="login">Принимает логин </param>
+        /// <param name="password">Принимает пароль</param>
+        /// <returns>Возвращает JWT токен</returns>
+        /// <exception cref="UnauthorizedException">В случае если логин или пароль не совпадает</exception>
         public async Task<string> LoginAsync(string login, string password)
         {
             var findUser = await _userRepository.FindByLoginAsync(login);
             if (findUser == null)
             {
-                throw new NotFoundExceptionApp("Неверный логин или пароль");
+                throw new UnauthorizedException();
             }
 
             bool isPasswordValid = _passwordHasher.CheckPassword(findUser, password);
             if (!isPasswordValid)
             {
-                throw new NotFoundExceptionApp("Неверный логин или пароль");
+                throw new UnauthorizedException();
             }
 
             return _jwtTokenGenerator.GenerateToken(findUser);

@@ -1,9 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using YAP_middle_csharp.Application.Interfaces;
 using YAP_middle_csharp.Application.Interfaces.IRepositories;
 using YAP_middle_csharp.Application.Services;
 using YAP_middle_csharp.Application.Services.BackgroundServices;
+using YAP_middle_csharp.Domain.Interface;
 using YAP_middle_csharp.Infrastructure.DataAccess;
 using YAP_middle_csharp.Infrastructure.Repository;
 

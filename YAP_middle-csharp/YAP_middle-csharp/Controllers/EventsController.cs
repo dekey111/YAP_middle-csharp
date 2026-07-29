@@ -143,9 +143,7 @@ namespace YAP_middle_csharp.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> CancelBookingAsync(
-            [FromRoute] Guid eventId,
-            [FromRoute] Guid bookingId) 
+        public async Task<IActionResult> CancelBookingAsync([FromRoute] Guid eventId, [FromRoute] Guid bookingId) 
         {
             var currentUserId = _userContext.GetCurrentUserId(User);
             var currentUserRole = _userContext.GetCurrentUserRole(User);

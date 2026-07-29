@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using YAP_middle_csharp.Domain.Models;
+﻿using YAP_middle_csharp.Domain.Models;
 
-namespace YAP_middle_csharp.Application.Interfaces
+namespace YAP_middle_csharp.Domain.Interface
 {
     public interface IJwtTokenGenerator
     {

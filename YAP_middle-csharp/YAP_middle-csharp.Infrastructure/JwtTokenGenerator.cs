@@ -3,7 +3,7 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
-using YAP_middle_csharp.Application.Interfaces;
+using YAP_middle_csharp.Domain.Interface;
 using YAP_middle_csharp.Domain.Models;
 
 namespace YAP_middle_csharp.Application.Services

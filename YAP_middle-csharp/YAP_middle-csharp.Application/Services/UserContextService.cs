@@ -26,8 +26,7 @@ namespace YAP_middle_csharp.Application.Services
             if (Enum.TryParse<UserRoleEnum>(roleClaim, true, out var role))
                 return role;
             
-
-            return UserRoleEnum.User;
+            throw new UnauthorizedOperationException();
         }
     }
 }
