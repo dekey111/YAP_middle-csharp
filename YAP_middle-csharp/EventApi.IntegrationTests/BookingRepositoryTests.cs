@@ -35,6 +35,14 @@ namespace EventApi.IntegrationTests
 
         public async Task DisposeAsync() => await _context.DisposeAsync();
 
+        private async Task<Guid> CreateTestUserAsync(string login = "testuser")
+        {
+            var user = new UserModel(login, "hash_password", UserRoleEnum.User);
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+            return user.Id;
+        }
+
         private async Task<Guid> CreateTestEventAsync()
         {
             var eventId = Guid.NewGuid();
@@ -46,23 +54,24 @@ namespace EventApi.IntegrationTests
                 TotalSeats = 50,
                 AvailableSeats = 50,
                 StartAt = DateTime.UtcNow,
-                EndAt = DateTime.UtcNow
+                EndAt = DateTime.UtcNow.AddDays(1)
             });
             await _context.SaveChangesAsync();
             return eventId;
         }
 
-
         [Fact]
         public async Task StartQueryToFindAllAsync_ReturnsQueryable()
         {
             var eventId = await CreateTestEventAsync();
-            var booking1 = new BookingModel(eventId)
+            var userId = await CreateTestUserAsync();
+
+            var booking1 = new BookingModel(eventId, userId)
             {
                 Status = BookingStatusEnum.Pending,
                 CreatedAt = DateTime.UtcNow
             };
-            var booking2 = new BookingModel(eventId)
+            var booking2 = new BookingModel(eventId, userId)
             {
                 Status = BookingStatusEnum.Rejected,
                 CreatedAt = DateTime.UtcNow
@@ -80,12 +89,14 @@ namespace EventApi.IntegrationTests
         public async Task FindPendingBookingsAsync_ReturnsOnlyPending()
         {
             var eventId = await CreateTestEventAsync();
-            var pendingBooking = new BookingModel(eventId)
+            var userId = await CreateTestUserAsync();
+
+            var pendingBooking = new BookingModel(eventId, userId)
             {
                 Status = BookingStatusEnum.Pending,
                 CreatedAt = DateTime.UtcNow
             };
-            var confirmedBooking = new BookingModel(eventId)
+            var confirmedBooking = new BookingModel(eventId, userId)
             {
                 Status = BookingStatusEnum.Confirmed,
                 CreatedAt = DateTime.UtcNow
@@ -105,7 +116,9 @@ namespace EventApi.IntegrationTests
         public async Task FindByIdAsync_ReturnsCorrectBooking()
         {
             var eventId = await CreateTestEventAsync();
-            var booking = new BookingModel(eventId)
+            var userId = await CreateTestUserAsync();
+
+            var booking = new BookingModel(eventId, userId)
             {
                 Status = BookingStatusEnum.Pending,
                 CreatedAt = DateTime.UtcNow
@@ -117,13 +130,16 @@ namespace EventApi.IntegrationTests
 
             Assert.NotNull(result);
             Assert.Equal(booking.Id, result.Id);
+            Assert.Equal(userId, result.UserId);
         }
 
         [Fact]
         public async Task CreateAsync_SavesBookingToDatabase()
         {
             var eventId = await CreateTestEventAsync();
-            var booking = new BookingModel(eventId)
+            var userId = await CreateTestUserAsync();
+
+            var booking = new BookingModel(eventId, userId)
             {
                 Status = BookingStatusEnum.Pending,
                 CreatedAt = DateTime.UtcNow
@@ -134,13 +150,16 @@ namespace EventApi.IntegrationTests
             var savedBooking = await _context.Bookings.FirstOrDefaultAsync(b => b.Id == booking.Id);
             Assert.NotNull(savedBooking);
             Assert.Equal(eventId, savedBooking.EventId);
+            Assert.Equal(userId, savedBooking.UserId);
         }
 
         [Fact]
         public async Task UpdateAsync_ModifiesExistingBooking()
         {
             var eventId = await CreateTestEventAsync();
-            var booking = new BookingModel(eventId)
+            var userId = await CreateTestUserAsync();
+
+            var booking = new BookingModel(eventId, userId)
             {
                 Status = BookingStatusEnum.Pending,
                 CreatedAt = DateTime.UtcNow
@@ -160,7 +179,9 @@ namespace EventApi.IntegrationTests
         public async Task DeleteAsync_RemovesBooking()
         {
             var eventId = await CreateTestEventAsync();
-            var booking = new BookingModel(eventId)
+            var userId = await CreateTestUserAsync();
+
+            var booking = new BookingModel(eventId, userId)
             {
                 Status = BookingStatusEnum.Pending,
                 CreatedAt = DateTime.UtcNow
@@ -172,6 +193,29 @@ namespace EventApi.IntegrationTests
 
             var deletedBooking = await _context.Bookings.FindAsync(booking.Id);
             Assert.Null(deletedBooking);
+        }
+
+        [Fact]
+        public async Task CheckActiveCountBookingByUserId_ReturnsCorrectCount()
+        {
+            var eventId = await CreateTestEventAsync();
+            var userId1 = await CreateTestUserAsync("user1");
+            var userId2 = await CreateTestUserAsync("user2");
+
+            var b1 = new BookingModel(eventId, userId1) { Status = BookingStatusEnum.Pending };
+            var b2 = new BookingModel(eventId, userId1) { Status = BookingStatusEnum.Confirmed };
+            var b3 = new BookingModel(eventId, userId1) { Status = BookingStatusEnum.Cancelled };
+
+            var b4 = new BookingModel(eventId, userId2) { Status = BookingStatusEnum.Pending };
+
+            _context.Bookings.AddRange(b1, b2, b3, b4);
+            await _context.SaveChangesAsync();
+
+            var user1ActiveCount = await _repository.CheckActiveCountBookingByUserId(userId1);
+            var user2ActiveCount = await _repository.CheckActiveCountBookingByUserId(userId2);
+
+            Assert.Equal(2, user1ActiveCount);
+            Assert.Equal(1, user2ActiveCount);
         }
     }
 }

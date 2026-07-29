@@ -59,15 +59,19 @@ namespace YAP_middle_csharp.Application.Services
         /// Метод получения конкретного события по id
         /// </summary>
         /// <param name="id">Уникальный идентификатор события</param>
-        /// <returns>Возвращает экземпляр EventModel в случае нахождения в противном случае null </returns>
-        public async Task<EventModel?> FindByIdAsync(Guid id)
+        /// <returns>Возвращает экземпляр EventModel</returns>
+        /// <exception cref="NotFoundExceptionApp">В случае если событие не найдено</exception>
+        public async Task<EventModel> FindByIdAsync(Guid id)
         {
             _logger.LogDebug("[EventService] [FindById] Попытка найти Event с ID = {id}", id);
-            
-            var findEvent = await _repository.FindByIdAsync(id);
 
-            var comment = findEvent is null ? "Не получилось" : "Получилось";
-            _logger.LogInformation($"[EventService] [FindById] {comment} найти Event с ID = {id}", id);
+            var findEvent = await _repository.FindByIdAsync(id);
+            if (findEvent == null)
+            {
+                _logger.LogWarning("[BookingService] [FindByIdAsync] Событие {id} не найдено", id);
+                throw new NotFoundExceptionApp($"Событие не найдено");
+            }
+            _logger.LogDebug($"[EventService] [FindById] Получилось найти Event с ID = {id}", id);
 
             return findEvent;
         }
@@ -118,25 +122,25 @@ namespace YAP_middle_csharp.Application.Services
         /// <returns>Возвращает обновлённую модель</returns>
         /// <exception cref="ValidationExceptionApp">Выбрасывается, в случае если модель пустая</exception>
         /// <exception cref="NotFoundExceptionApp">Выбрасывается в случае, если такого события по ID не найдено</exception>
-        public async Task<EventModel> UpdateAsync(EventResponse eventResponse)
+        public async Task<EventModel> UpdateAsync(Guid id, EventUpdateRequest eventUpdateRequest)
         {
-            if (eventResponse is null)
+            if (eventUpdateRequest is null)
             {
                 throw new ValidationExceptionApp("Данные для обновления не могут быть пустыми");
             }
 
-            var findEvent = await _repository.FindByIdAsync(eventResponse.Id);
+            var findEvent = await _repository.FindByIdAsync(id);
             if (findEvent is null)
             {
-                _logger.LogError("[EventService] [Update] Event ID: {id} не найдено!", eventResponse.Id);
+                _logger.LogError("[EventService] [Update] Event ID: {id} не найдено!", id);
                 throw new NotFoundExceptionApp("Event не найден!");
             }
 
-            findEvent.Title = eventResponse.Title;
-            findEvent.Description = eventResponse.Description;
-            findEvent.TotalSeats = eventResponse.TotalSeats;
-            findEvent.StartAt = eventResponse.StartAt;
-            findEvent.EndAt = eventResponse.EndAt;
+            findEvent.Title = eventUpdateRequest.Title;
+            findEvent.Description = eventUpdateRequest.Description;
+            findEvent.TotalSeats = eventUpdateRequest.TotalSeats;
+            findEvent.StartAt = eventUpdateRequest.StartAt;
+            findEvent.EndAt = eventUpdateRequest.EndAt;
 
             var errors = _validator.GetErrors(findEvent).ToList();
             if (errors.Any())

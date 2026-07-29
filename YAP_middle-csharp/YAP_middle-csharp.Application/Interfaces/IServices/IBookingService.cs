@@ -16,6 +16,21 @@ namespace YAP_middle_csharp.Application.Interfaces.IServices
         /// </summary>
         /// <param name="eventId">УИ события</param>
         /// <returns>Возвращает созданную бронь</returns>
-        Task<BookingModel> CreateBookingAsync(Guid eventId);
+        Task<BookingModel> CreateBookingAsync(Guid eventId, Guid userId);
+
+        /// <summary>
+        /// Метод отмены бронирования
+        /// </summary>
+        /// <param name="eventId">Принимает УИ события</param>
+        /// <param name="bookingId">Принимает уникальный идентификатор бронирования</param>
+        Task CancelledBookingAsync(Guid eventId, Guid bookingId, Guid currentUserId, UserRoleEnum currentUserRole);
+
+        /// <summary>
+        /// Метод получения брони по УИ с проверкой прав доступа
+        /// </summary>
+        /// <param name="id">Уникальный идентификатор бронирования</param>
+        /// <param name="currentUserId">Уникальный идентификатор пользователя запроса</param>
+        /// <returns>Возвращает найденную бронь или 400</returns>
+        Task<BookingModel?> FindByIdForUserAsync(Guid id, Guid idUserFromRequest);
     }
 }

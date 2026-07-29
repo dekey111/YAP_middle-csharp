@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using YAP_middle_csharp.Application.Interfaces.IServices;
 using YAP_middle_csharp.Application.Models;
@@ -11,13 +12,15 @@ namespace YAP_middle_csharp.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
-    public class EventsController(IEventService eventService,
+    public class EventsController(IUserContextService userContext,
+        IEventService eventService,
         IBookingService bookingService,
-        ILogger<BookingController> logger) : ControllerBase
+        ILogger<EventsController> logger) : ControllerBase
     {
+        private readonly IUserContextService _userContext = userContext;
         private readonly IEventService _eventService = eventService;
         private readonly IBookingService _bookingService = bookingService;
-        private readonly ILogger<BookingController> _logger = logger;
+        private readonly ILogger<EventsController> _logger = logger;
 
         /// <summary>
         /// Метод получения всех событий
@@ -30,21 +33,21 @@ namespace YAP_middle_csharp.Controllers
         /// <returns>Возвращается Json-Структуру и статусом 200-OK в случае успеха</returns>
         /// <returns>Возвращает 400 в случае ошибки получения страниц или количество элементов на странице</returns>
         [HttpGet]
-        [ProducesResponseType(typeof(IEnumerable<EventResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(IEnumerable<EventUpdateRequest>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetAllEventsAsync(
             [FromQuery] string? title,
             [FromQuery] DateTime? from,
             [FromQuery] DateTime? to,
-            [FromQuery, Range(1, int.MaxValue, ErrorMessage ="Номер страницы должен быть не менее 1")] int page = 1,
+            [FromQuery, Range(1, int.MaxValue, ErrorMessage = "Номер страницы должен быть не менее 1")] int page = 1,
             [FromQuery, Range(1, 200, ErrorMessage = "Размер страницы должен быть от 1 до 200")] int pageSize = 10)
         {
             _logger.LogDebug("[EventsController] [GetAllEvents]");
 
             var result = await _eventService.FindAllAsync(title, from, to, page, pageSize);
-            var respondedItems = result.Items.Select(e => new EventResponse(e));
+            var respondedItems = result.Items.Select(e => new EventUpdateRequest(e));
 
-            return Ok(new PaginatedResult<EventResponse>
+            return Ok(new PaginatedResult<EventUpdateRequest>
             {
                 Items = respondedItems,
                 TotalCount = result.TotalCount,
@@ -59,7 +62,7 @@ namespace YAP_middle_csharp.Controllers
         /// <param name="id">Принимает существующий id из списка событий</param>
         /// <returns>Возвращает статус 200 и найденный элемент, либо 404 с комментарием</returns>
         [HttpGet("{id:Guid}")]
-        [ProducesResponseType(typeof(EventResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(EventUpdateRequest), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetEventByIdAsync([FromRoute] Guid id)
         {
@@ -72,7 +75,7 @@ namespace YAP_middle_csharp.Controllers
                 throw new KeyNotFoundException($"Event c id: {id} не найден!");
             }
 
-            return Ok(new EventResponse(findEvent));
+            return Ok(new EventUpdateRequest(findEvent));
         }
 
         /// <summary>
@@ -82,14 +85,15 @@ namespace YAP_middle_csharp.Controllers
         /// <returns>Возвращает 201 с ссылкой на созданное событие</returns>
         /// <returns>Возвращает 400 в случае ошибки валидации события</returns>
         [HttpPost]
-        [ProducesResponseType(typeof(EventResponse), StatusCodes.Status201Created)]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(EventUpdateRequest), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> AddEventAsync([FromBody] EventRequest eventRequest)
         {
             _logger.LogDebug("[EventsController] [AddEvent] Запрос на добавление нового события");
 
             var createdEvent = await _eventService.CreateAsync(eventRequest);
-            var newEventResponse = new EventResponse(createdEvent);
+            var newEventResponse = new EventUpdateRequest(createdEvent);
 
             return CreatedAtAction(nameof(GetEventByIdAsync), new { id = createdEvent.Id }, newEventResponse);
         }
@@ -104,24 +108,50 @@ namespace YAP_middle_csharp.Controllers
         /// <returns>409 - Возвращается если свободных мест больше нет</returns>
         /// <exception cref="NotFoundExceptionApp"></exception>
         [HttpPost("{eventId:guid}/book")]
+        [Authorize]
         [ProducesResponseType(typeof(BookingModel), StatusCodes.Status202Accepted)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-        public async Task<IActionResult> AddBookingByEventIdAsync(Guid eventId)
+        public async Task<IActionResult> AddBookingByEventIdAsync([FromRoute] Guid eventId)
         {
+
+            var userId = _userContext.GetCurrentUserId(User);
+
             _logger.LogInformation("[EventsController] [AddBookingByEventId] Запрос на бронирование события {EventId}", eventId);
-            var newBooking = await _bookingService.CreateBookingAsync(eventId);
+            var newBooking = await _bookingService.CreateBookingAsync(eventId, userId);
             var bookingResponse = new
             {
                 id = newBooking.Id,
                 eventId = newBooking.EventId,
                 status = newBooking.Status.ToString(),
                 createdAt = newBooking.CreatedAt,
-                processedAt = newBooking.ProcessedAt
+                processedAt = newBooking.ProcessedAt,
+                userId = newBooking.UserId
             };
 
-            return AcceptedAtAction("GetBookingAsync", "Booking", new { id = newBooking.Id }, bookingResponse);
+            return AcceptedAtAction(nameof(BookingController.GetBookingAsync), "Booking", new { id = newBooking.Id }, bookingResponse);
+        }
+
+
+        /// <summary>
+        /// Отмена бронирования на событие
+        /// </summary>
+        [HttpDelete("{eventId:guid}/book/{bookingId:guid}")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> CancelBookingAsync([FromRoute] Guid eventId, [FromRoute] Guid bookingId)
+        {
+            var currentUserId = _userContext.GetCurrentUserId(User);
+            var currentUserRole = _userContext.GetCurrentUserRole(User);
+
+            _logger.LogInformation("[EventsController] [CancelBookingAsync] Запрос на отмену брони {BookingId} для события {EventId}", bookingId, eventId);
+
+            await _bookingService.CancelledBookingAsync(eventId, bookingId, currentUserId, currentUserRole);
+            return NoContent();
         }
 
         /// <summary>
@@ -133,20 +163,15 @@ namespace YAP_middle_csharp.Controllers
         /// <returns>Возвращает - 400 В случае ошибки валидации</returns>
         /// <returns>Возвращает - 404 В случае если событие не найдено</returns>
         [HttpPut("{id:Guid}")]
-        [ProducesResponseType(typeof(EventResponse), StatusCodes.Status200OK)]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(EventUpdateRequest), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> EditEventAsync([FromRoute] Guid id, [FromBody] EventResponse eventResponse)
+        public async Task<IActionResult> EditEventAsync([FromRoute] Guid id, [FromBody] EventUpdateRequest eventUpdateRequest)
         {
             _logger.LogInformation("[EventsController] [EditEvent] Запрос на изменения события {EventId}", id);
-
-            if (id != eventResponse.Id)
-            {
-                throw new ValidationExceptionApp("Проблема в сущности и в запросе. Проверьте правильность данных!");
-            }
-
-            var updatedEvent = await _eventService.UpdateAsync(eventResponse);
-            return Ok(new EventResponse(updatedEvent));
+            var updatedEvent = await _eventService.UpdateAsync(id, eventUpdateRequest);
+            return Ok(new EventUpdateRequest(updatedEvent));
         }
 
         /// <summary>
@@ -156,7 +181,8 @@ namespace YAP_middle_csharp.Controllers
         /// <returns>возвращает - 204 в случае успеха</returns>
         /// <returns>Возвращает - 404 В случае если событие не найдено</returns>
         [HttpDelete("{id:Guid}")]
-        [ProducesResponseType(typeof(EventResponse), StatusCodes.Status204NoContent)]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(EventUpdateRequest), StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteEventAsync([FromRoute] Guid id)
         {

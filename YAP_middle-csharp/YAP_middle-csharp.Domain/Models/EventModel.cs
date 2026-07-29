@@ -54,7 +54,7 @@ namespace YAP_middle_csharp.Domain.Models
             {
                 current = _availableSeats;
                 if (current < count) return false;
-                    updated = current - count;
+                updated = current - count;
             }
             while (Interlocked.CompareExchange(ref _availableSeats, updated, current) != current);
 
@@ -69,8 +69,8 @@ namespace YAP_middle_csharp.Domain.Models
             {
                 current = _availableSeats;
                 var total = _totalSeats;
-                if(current + count > total) return false;
-                    updated = current + count;
+                if (current + count > total) return false;
+                updated = current + count;
             }
             while (Interlocked.CompareExchange(ref _availableSeats, updated, current) != current);
             return true;

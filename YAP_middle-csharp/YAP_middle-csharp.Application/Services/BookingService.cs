@@ -14,13 +14,16 @@ namespace YAP_middle_csharp.Application.Services
     /// <param name="logger">Принимает логгер</param>
     public class BookingService(IBookingRepository repository,
         ILogger<BookingService> logger,
-        IEventService eventService ) : IBookingService
+        IEventService eventService,
+        IUserRepository userRepository) : IBookingService
     {
         private readonly ILogger<BookingService> _logger = logger;
         private readonly IBookingRepository _repository = repository;
         private readonly IEventService _eventService = eventService;
+        private readonly IUserRepository _userRepository = userRepository;
 
-        private readonly static SemaphoreSlim _bookingSemaphore = new (1, 1);
+        private readonly static SemaphoreSlim _bookingSemaphore = new(1, 1);
+        private readonly static SemaphoreSlim _bookingCancelledSemaphore = new(1, 1);
 
 
         /// <summary>
@@ -69,23 +72,54 @@ namespace YAP_middle_csharp.Application.Services
             return await _repository.FindPendingBookingsAsync();
         }
 
+
         /// <summary>
-        /// Метод получения конкретной брони по id
+        /// Метод получения брони без проверки прав доступа
         /// </summary>
-        /// <param name="id">Уникальный идентификатор брони</param>
-        /// <returns>Возвращает экземпляр BookingModel в случае нахождения в противном случае null </returns>
-        public async Task<BookingModel?> FindByIdAsync(Guid id)
+        /// <param name="id">Уникальный идентификатор бронирования</param>
+        /// <returns>Возвращает найденную бронь или 400</returns>
+        public async Task<BookingModel> FindByIdAsync(Guid id)
         {
-            _logger.LogDebug("[BookingService] [FindById] Попытка найти Booking с ID = {id}", id);
+            _logger.LogDebug("[BookingService] [FindByIdAsync] Попытка найти Booking с ID = {id}", id);
 
             var findBooking = await _repository.FindByIdAsync(id);
             if (findBooking == null)
             {
-                _logger.LogWarning("[BookingService] [FindById] Бронь {BookingId} не найдена", id);
+                _logger.LogWarning("[BookingService] [FindByIdAsync] Бронь {BookingId} не найдена", id);
                 throw new NotFoundExceptionApp($"Бронь не найдена");
             }
-            _logger.LogInformation($"[BookingService] [FindById] Получилось найти Booking с ID = {id}", id);
 
+            _logger.LogInformation($"[BookingService] [FindByIdAsync] Получилось найти Booking с ID = {id}", id);
+            return findBooking;
+        }
+
+        /// <summary>
+        /// Метод получения брони по УИ с проверкой прав доступа
+        /// </summary>
+        /// <param name="id">Уникальный идентификатор бронирования</param>
+        /// <param name="idUserFromRequest">Уникальный идентификатор пользователя запроса</param>
+        /// <returns>Возвращает найденную бронь или 400</returns>
+        public async Task<BookingModel?> FindByIdForUserAsync(Guid id, Guid idUserFromRequest)
+        {
+            _logger.LogDebug("[BookingService] [FindByIdForUserAsync] Попытка найти Booking с ID = {id}", id);
+
+            var findUser = await _userRepository.FindByIdAsync(idUserFromRequest);
+            if (findUser == null)
+            {
+                _logger.LogWarning("[BookingService] [FindByIdForUserAsync] Пользователь: {idUserFromRequest} запроса не найден!", idUserFromRequest);
+                throw new NotFoundExceptionApp($"Бронь не найдена");
+            }
+
+            var findBooking = await FindByIdAsync(id);
+
+            if (findUser.UserRole != UserRoleEnum.Admin && findBooking.UserId != idUserFromRequest)
+            {
+                _logger.LogWarning("[BookingService] [FindByIdForUserAsync] Пользователь: {idUserFromRequest}, пытается получить чужое бронирование", idUserFromRequest);
+                throw new NotFoundExceptionApp($"Ошибка получения бронирования");
+            }
+
+
+            _logger.LogInformation($"[BookingService] [FindByIdForUserAsync] Получилось найти Booking с ID = {id}", id);
             return findBooking;
         }
 
@@ -118,7 +152,7 @@ namespace YAP_middle_csharp.Application.Services
         /// <exception cref="NotFoundExceptionApp">В случае если не найден Event</exception>
         /// <exception cref="ValidationExceptionApp">В случае ошибки валидации</exception>
         /// <exception cref="NoAvailableSeatsExceptionApp">В случае если мест не хватает</exception>
-        public async Task<BookingModel> CreateBookingAsync(Guid eventId)
+        public async Task<BookingModel> CreateBookingAsync(Guid eventId, Guid userId)
         {
             _logger.LogInformation("[BookingService] [CreateBookingAsync] Попытка создать бронь для события {EventId}", eventId);
 
@@ -132,10 +166,23 @@ namespace YAP_middle_csharp.Application.Services
                     throw new NotFoundExceptionApp("Событие не найдено");
                 }
 
+                if (DateTime.UtcNow >= findEvent.StartAt)
+                {
+                    _logger.LogWarning("[BookingService] [CreateBookingAsync] Попытка забронировать уже начавшееся событие {EventId}", eventId);
+                    throw new ValidationExceptionApp("Нельзя забронировать событие, которое уже началось");
+                }
+
                 if (DateTime.UtcNow >= findEvent.EndAt)
                 {
                     _logger.LogWarning("[BookingService] [CreateBookingAsync] Срок регистрации на событие истек {EventId}", eventId);
                     throw new ValidationExceptionApp("Срок регистрации на событие истек");
+                }
+
+                int activeBookingsCount = await _repository.CheckActiveCountBookingByUserId(userId);
+                if (activeBookingsCount >= 10)
+                {
+                    _logger.LogWarning("[BookingService] [CreateBookingAsync] Пользователь {UserId} превысил лимит активных броней", userId);
+                    throw new BookingLimitExceededException(10);
                 }
 
                 bool hasSeat = findEvent.TryReserveSeats(1);
@@ -145,7 +192,7 @@ namespace YAP_middle_csharp.Application.Services
                     throw new NoAvailableSeatsExceptionApp("Недостаточно мест на событие");
                 }
 
-                var newBooking = new BookingModel(eventId);
+                var newBooking = new BookingModel(eventId, userId);
 
                 await _repository.CreateAsync(newBooking);
 
@@ -222,6 +269,72 @@ namespace YAP_middle_csharp.Application.Services
             await _repository.DeleteAsync(findBooking);
 
             _logger.LogInformation("[BookingService] [Delete] Booking удалён: id={Id}", findBooking.Id);
+        }
+
+        /// <summary>
+        /// Метод отмены бронирования
+        /// </summary>
+        /// <param name="bookingId">Принимает УИ бронирования </param>
+        public async Task CancelledBookingAsync(Guid eventId, Guid bookingId, Guid currentUserId, UserRoleEnum currentUserRole)
+        {
+            _logger.LogWarning("[BookingService] [CancelledBookingAsync] Попытка отмены бронирования: {bookingId} у события: {eventId}", bookingId, eventId);
+
+            await _bookingCancelledSemaphore.WaitAsync();
+            try
+            {
+                var findEvent = await _eventService.FindByIdAsync(eventId);
+                if (findEvent == null)
+                {
+                    _logger.LogWarning("[BookingService] [CancelledBookingAsync] Событие не найдено {EventId}", eventId);
+                    throw new NotFoundExceptionApp("Событие не найдено");
+                }
+
+                var findBooking = await _repository.FindByIdAsync(bookingId);
+                if (findBooking == null)
+                {
+                    _logger.LogWarning("[BookingService] [CancelledBookingAsync] Бронь id: {bookingId} на событие: {eventId} не найдена! ", bookingId, eventId);
+                    throw new NotFoundExceptionApp("Бронирование не найдено");
+                }
+
+                if (findBooking.UserId != currentUserId && currentUserRole != UserRoleEnum.Admin)
+                {
+                    _logger.LogWarning("[BookingService] [CancelledBookingAsync] Пользователь: {UserId} пытается отменить чужую бронь: {BookingId}", currentUserId, bookingId);
+                    throw new UnauthorizedOperationException();
+                }
+
+                if (findBooking.EventId != eventId)
+                {
+                    _logger.LogWarning("[BookingService] [CancelledBookingAsync] Указанная бронь: {bookingId} не принадлежит данному событию: {eventId}", bookingId, eventId);
+                    throw new ValidationExceptionApp("Указанная бронь не принадлежит данному событию");
+                }
+
+                if (findBooking.Status == BookingStatusEnum.Confirmed || findBooking.Status == BookingStatusEnum.Rejected || findBooking.Status == BookingStatusEnum.Cancelled)
+                {
+                    _logger.LogWarning("[BookingService] [CancelledBookingAsync] Бронирование: {bookingId} нельзя отменить, потому что оно уже обработано", bookingId);
+                    throw new ValidationExceptionApp("Бронирование нельзя отменить, потому что оно уже обработано");
+                }
+
+                if (DateTime.UtcNow >= findEvent.StartAt)
+                {
+                    _logger.LogWarning("[BookingService] [CancelledBookingAsync] Попытка отмены брони после начала события {EventId}", eventId);
+                    throw new ValidationExceptionApp("Нельзя отменить бронирование после начала или завершения события");
+                }
+
+                findBooking.Cancel();
+                findEvent.ReleaseSeats();
+
+                await _repository.UpdateAsync(findBooking);
+                _logger.LogInformation("[BookingService] [CancelledBookingAsync] Бронь: {bookingId} для события: {eventId} успешно отменена", bookingId, eventId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[BookingService] [CancelledBookingAsync] Произошла ошибка при отмене бронирования: {bookingId} для события: {eventId}", bookingId, eventId);
+                throw;
+            }
+            finally
+            {
+                _bookingCancelledSemaphore.Release();
+            }
         }
     }
 }

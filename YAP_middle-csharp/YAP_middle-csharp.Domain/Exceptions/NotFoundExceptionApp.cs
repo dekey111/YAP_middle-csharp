@@ -1,4 +1,4 @@
-﻿using YAP_middle_csharpю.Domain.Exceptions;
+﻿using YAP_middle_csharp.Domain.Exceptions;
 
 namespace YAP_middle_csharp.Domain.Exceptions
 {

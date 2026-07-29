@@ -5,8 +5,9 @@
     /// </summary>
     public enum BookingStatusEnum
     {
-        Pending,  
-        Confirmed, 
-        Rejected   
+        Pending,
+        Confirmed,
+        Rejected,
+        Cancelled
     }
 }

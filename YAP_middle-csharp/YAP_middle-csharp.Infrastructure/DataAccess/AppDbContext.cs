@@ -9,6 +9,7 @@ namespace YAP_middle_csharp.Infrastructure.DataAccess
 
         public DbSet<EventModel> Events => Set<EventModel>();
         public DbSet<BookingModel> Bookings => Set<BookingModel>();
+        public DbSet<UserModel> Users => Set<UserModel>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -24,7 +24,7 @@ namespace YAP_middle_csharp.Application.Validator
 
             if (string.IsNullOrWhiteSpace(item.Title))
                 yield return "Поле 'заголовок' не может быть пустым!";
-            
+
             if (item.StartAt == default)
                 yield return "Поле 'дата начала' не может быть пустым!";
 
@@ -34,7 +34,7 @@ namespace YAP_middle_csharp.Application.Validator
             if (item.StartAt != default && item.EndAt != default && item.StartAt > item.EndAt)
                 yield return "Дата окончания не может быть раньше даты начала!";
 
-            if (item.TotalSeats <=0 )
+            if (item.TotalSeats <= 0)
                 yield return "Количество мест должно быть от 1 до 250";
         }
 

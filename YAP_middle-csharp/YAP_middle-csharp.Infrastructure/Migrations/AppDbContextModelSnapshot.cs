@@ -17,12 +17,12 @@ namespace YAP_middle_csharp.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.8")
+                .HasAnnotation("ProductVersion", "10.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("YAP_middle_csharp.Models.BookingModel", b =>
+            modelBuilder.Entity("YAP_middle_csharp.Domain.Models.BookingModel", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -41,14 +41,19 @@ namespace YAP_middle_csharp.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("EventId");
 
+                    b.HasIndex("UserId");
+
                     b.ToTable("Bookings", (string)null);
                 });
 
-            modelBuilder.Entity("YAP_middle_csharp.Models.EventModel", b =>
+            modelBuilder.Entity("YAP_middle_csharp.Domain.Models.EventModel", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -80,18 +85,58 @@ namespace YAP_middle_csharp.Infrastructure.Migrations
                     b.ToTable("Events", (string)null);
                 });
 
-            modelBuilder.Entity("YAP_middle_csharp.Models.BookingModel", b =>
+            modelBuilder.Entity("YAP_middle_csharp.Domain.Models.UserModel", b =>
                 {
-                    b.HasOne("YAP_middle_csharp.Models.EventModel", "Event")
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Login")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserRole")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Login")
+                        .IsUnique();
+
+                    b.ToTable("Users", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
+                            Login = "system_legacy_user",
+                            PasswordHash = "legacy_hash",
+                            UserRole = "User"
+                        });
+                });
+
+            modelBuilder.Entity("YAP_middle_csharp.Domain.Models.BookingModel", b =>
+                {
+                    b.HasOne("YAP_middle_csharp.Domain.Models.EventModel", "Event")
                         .WithMany("Bookings")
                         .HasForeignKey("EventId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("YAP_middle_csharp.Domain.Models.UserModel", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.Navigation("Event");
                 });
 
-            modelBuilder.Entity("YAP_middle_csharp.Models.EventModel", b =>
+            modelBuilder.Entity("YAP_middle_csharp.Domain.Models.EventModel", b =>
                 {
                     b.Navigation("Bookings");
                 });

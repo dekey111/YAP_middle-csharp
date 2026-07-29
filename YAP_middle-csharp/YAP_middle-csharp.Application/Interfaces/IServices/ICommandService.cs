@@ -20,7 +20,7 @@ namespace YAP_middle_csharp.Application.Interfaces.IServices
         /// </summary>
         /// <param name="entity">Объект сущности с обновленными данными</param>
         /// <returns>Возвращает обновленный объект сущности</returns>
-        Task<T>UpdateAsync(T entity);
+        Task<T> UpdateAsync(T entity);
 
         /// <summary>
         /// Удаление записи из системы

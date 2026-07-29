@@ -26,6 +26,12 @@ namespace YAP_middle_csharp.Infrastructure.DataAccess.Configurations
                 .WithMany(x => x.Bookings)
                 .HasForeignKey(x => x.EventId)
                 .IsRequired();
+
+            builder.HasOne<UserModel>()
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
