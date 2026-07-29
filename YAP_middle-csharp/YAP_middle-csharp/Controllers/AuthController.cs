@@ -9,7 +9,7 @@ using RegisterRequest = YAP_middle_csharp.Application.Models.RegisterRequest;
 namespace YAP_middle_csharp.Controllers
 {
     [ApiController]
-    [Route("api/auth")]
+    [Route("api/[controller]")]
     [Produces("application/json")]
     public class AuthController(IUserService userService, ILogger<AuthController> logger) : ControllerBase
     {
@@ -20,7 +20,7 @@ namespace YAP_middle_csharp.Controllers
         /// Регистрация нового пользователя
         /// </summary>
         /// <param name="request">Принимает данные регистрации пользователя</param>
-        [HttpPost("registerUser")]
+        [HttpPost("register-user")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> RegisterStandartUserAsync([FromBody] RegisterRequest request)
@@ -36,7 +36,7 @@ namespace YAP_middle_csharp.Controllers
         /// Регистрация нового администратора
         /// </summary>
         /// <param name="request">Принимает данные регистрации пользователя</param>
-        [HttpPost("registerAdmin")]
+        [HttpPost("register-admin")]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
