@@ -10,6 +10,7 @@ using YAP_middle_csharp.Application.Interfaces.IRepositories;
 using YAP_middle_csharp.Application.Interfaces.IServices;
 using YAP_middle_csharp.Application.Services;
 using YAP_middle_csharp.Domain.Exceptions;
+using YAP_middle_csharp.Domain.Interface;
 using YAP_middle_csharp.Domain.Models;
 using YAP_middle_csharp.Infrastructure.DataAccess;
 using YAP_middle_csharp.Infrastructure.Repository;
@@ -63,19 +64,16 @@ namespace YAP_middle_csharp.Tests
         {
             await _userService.RegisterAsync("UserwronntPass", "CorrectPassword123!", UserRoleEnum.User);
 
-            var ex = await Assert.ThrowsAsync<ValidationExceptionApp>(() =>
-                _userService.LoginAsync("UserwronntPass", "WrongPassword123!"));
-
-            Assert.Equal("Неверный логин или пароль", ex.Message);
+            var ex = await Assert.ThrowsAsync<UnauthorizedException>(() =>  _userService.LoginAsync("UserwronntPass", "WrongPassword123!"));
+            Assert.Equal("Ошибка авторизации", ex.Message);
         }
 
         [Fact]
         public async Task LoginAsync_NotFoundUser()
         {
-            var ex = await Assert.ThrowsAsync<ValidationExceptionApp>(() =>
-                _userService.LoginAsync("404User", "AnyPassword"));
+            var ex = await Assert.ThrowsAsync<UnauthorizedException>(() => _userService.LoginAsync("404User", "AnyPassword"));
 
-            Assert.Equal("Неверный логин или пароль", ex.Message);
+            Assert.Equal("Ошибка авторизации", ex.Message);
         }
     }
 }

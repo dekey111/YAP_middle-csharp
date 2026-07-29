@@ -605,6 +605,53 @@ namespace YAP_middle_csharp.Tests
 
             await Assert.ThrowsAsync<UnauthorizedOperationException>(() => _bookingService.CancelledBookingAsync(eventId, booking.Id, strangerId, UserRoleEnum.User));
         }
+
+
+        [Fact]
+        public async Task CancelledBookingAsync_AfterStartAt_ThrowsValidationExceptionApp()
+        {
+            var userId = Guid.NewGuid();
+            Guid pastEventId;
+            Guid bookingId;
+
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                var pastEvent = new EventModel
+                {
+                    Id = Guid.NewGuid(),
+                    Title = "Прошедшее событие",
+                    TotalSeats = 10,
+                    AvailableSeats = 9,
+                    StartAt = DateTime.UtcNow.AddHours(-2), 
+                    EndAt = DateTime.UtcNow.AddHours(2)
+                };
+
+                var booking = new BookingModel(pastEvent.Id, userId)
+                {
+                    Status = BookingStatusEnum.Pending,
+                    CreatedAt = DateTime.UtcNow.AddDays(-1)
+                };
+
+                await dbContext.Events.AddAsync(pastEvent);
+                await dbContext.Bookings.AddAsync(booking);
+                await dbContext.SaveChangesAsync();
+
+                pastEventId = pastEvent.Id;
+                bookingId = booking.Id;
+            }
+
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var scopedBookingService = scope.ServiceProvider.GetRequiredService<IBookingService>();
+
+                var exception = await Assert.ThrowsAsync<ValidationExceptionApp>(() =>
+                    scopedBookingService.CancelledBookingAsync(pastEventId, bookingId, userId, UserRoleEnum.User));
+
+                Assert.Equal("Нельзя отменить бронирование после начала или завершения события", exception.Message);
+            }
+        }
         #endregion
     }
 }

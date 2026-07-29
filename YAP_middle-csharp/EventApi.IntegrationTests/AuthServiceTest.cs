@@ -88,10 +88,9 @@ namespace EventApi.IntegrationTests
 
             await _userService.RegisterAsync(login, password, UserRoleEnum.User);
 
-            var ex = await Assert.ThrowsAsync<ValidationExceptionApp>(() =>
-                _userService.LoginAsync(login, "InvalidPassword123!"));
+            var ex = await Assert.ThrowsAsync<UnauthorizedException>(() =>  _userService.LoginAsync(login, "InvalidPassword123!"));
 
-            Assert.Equal("Неверный логин или пароль", ex.Message);
+            Assert.Equal("Ошибка авторизации", ex.Message);
         }
     }
 }
