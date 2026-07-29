@@ -4,6 +4,7 @@ using YAP_middle_csharp.Application.Interfaces;
 using YAP_middle_csharp.Application.Interfaces.IServices;
 using YAP_middle_csharp.Application.Services;
 using YAP_middle_csharp.Application.Validator;
+using YAP_middle_csharp.Domain.Interface;
 using YAP_middle_csharp.Domain.Models;
 
 
