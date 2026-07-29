@@ -25,9 +25,9 @@ namespace YAP_middle_csharp.Infrastructure.DataAccess.Configurations
             builder.Property(x => x.PasswordHash)
                 .IsRequired();
 
-            builder.Property(x => x.UserRole) 
+            builder.Property(x => x.UserRole)
                 .IsRequired()
-                .HasConversion<string>(); 
+                .HasConversion<string>();
         }
     }
 }

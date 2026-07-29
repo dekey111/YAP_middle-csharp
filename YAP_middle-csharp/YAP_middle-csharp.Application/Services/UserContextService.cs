@@ -14,7 +14,7 @@ namespace YAP_middle_csharp.Application.Services
 
             if (!Guid.TryParse(userIdClaim, out var currentUserId))
                 throw new UnauthorizedOperationException();
-            
+
 
             return currentUserId;
         }
@@ -25,7 +25,7 @@ namespace YAP_middle_csharp.Application.Services
 
             if (Enum.TryParse<UserRoleEnum>(roleClaim, true, out var role))
                 return role;
-            
+
             throw new UnauthorizedOperationException();
         }
     }

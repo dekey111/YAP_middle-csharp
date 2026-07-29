@@ -17,7 +17,7 @@ namespace YAP_middle_csharp.Application.Services
         public bool CheckPassword(UserModel user, string password)
         {
             var checkpassword = _hasher.VerifyHashedPassword(user, user.PasswordHash, password);
-            return checkpassword != PasswordVerificationResult.Failed; 
+            return checkpassword != PasswordVerificationResult.Failed;
         }
 
         public string HashPassword(string password)

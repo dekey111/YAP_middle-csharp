@@ -107,7 +107,7 @@ namespace YAP_middle_csharp.Infrastructure.Repository
 
         public async Task<int> CheckActiveCountBookingByUserId(Guid userId)
         {
-            return await _context.Bookings.CountAsync(x => x.UserId == userId && 
+            return await _context.Bookings.CountAsync(x => x.UserId == userId &&
             (x.Status == BookingStatusEnum.Pending || x.Status == BookingStatusEnum.Confirmed));
         }
     }

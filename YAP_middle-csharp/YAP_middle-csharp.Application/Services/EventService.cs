@@ -64,9 +64,9 @@ namespace YAP_middle_csharp.Application.Services
         public async Task<EventModel> FindByIdAsync(Guid id)
         {
             _logger.LogDebug("[EventService] [FindById] Попытка найти Event с ID = {id}", id);
-            
+
             var findEvent = await _repository.FindByIdAsync(id);
-            if(findEvent == null)
+            if (findEvent == null)
             {
                 _logger.LogWarning("[BookingService] [FindByIdAsync] Событие {id} не найдено", id);
                 throw new NotFoundExceptionApp($"Событие не найдено");

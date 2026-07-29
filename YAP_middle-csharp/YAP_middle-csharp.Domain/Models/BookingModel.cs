@@ -13,8 +13,8 @@ namespace YAP_middle_csharp.Domain.Models
         public required Guid UserId { get; set; }
         public required BookingStatusEnum Status { get; set; }
 
-        private DateTimeOffset _createdAt; 
-        public required DateTime CreatedAt 
+        private DateTimeOffset _createdAt;
+        public required DateTime CreatedAt
         {
             get => _createdAt.UtcDateTime;
             set => _createdAt = value.Kind == DateTimeKind.Unspecified
@@ -26,9 +26,9 @@ namespace YAP_middle_csharp.Domain.Models
         public DateTime? ProcessedAt
         {
             get => _processedAt?.UtcDateTime;
-            set => _processedAt = value.HasValue 
-                ? (value.Value.Kind == DateTimeKind.Unspecified 
-                    ? DateTime.SpecifyKind(value.Value, DateTimeKind.Utc) 
+            set => _processedAt = value.HasValue
+                ? (value.Value.Kind == DateTimeKind.Unspecified
+                    ? DateTime.SpecifyKind(value.Value, DateTimeKind.Utc)
                     : value.Value.ToUniversalTime())
                 : null;
         }
@@ -54,7 +54,7 @@ namespace YAP_middle_csharp.Domain.Models
 
         public void Cancel()
         {
-            if(Status != BookingStatusEnum.Pending)
+            if (Status != BookingStatusEnum.Pending)
             {
                 throw new ValidationExceptionApp("Бронирование нельзя отменить, потому что оно уже обработано");
             }

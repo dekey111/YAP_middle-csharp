@@ -58,7 +58,7 @@ namespace YAP_middle_csharp.Application.Services.BackgroundServices
                 }
 
                 await Task.Delay(2000);
-            } 
+            }
         }
 
         /// <summary>
@@ -81,9 +81,9 @@ namespace YAP_middle_csharp.Application.Services.BackgroundServices
                 try
                 {
                     booking = await bookingRepository.FindByIdAsync(pendingBookId);
-                    if(booking == null || booking.Status != BookingStatusEnum.Pending)
+                    if (booking == null || booking.Status != BookingStatusEnum.Pending)
                         return;
-                    
+
 
                     _logger.LogInformation("[BackgroundBookingService] Взяли в работу ID: {idBook}", pendingBookId);
                     findEvent = await eventService.FindByIdAsync(booking.EventId);

@@ -31,7 +31,7 @@ namespace YAP_middle_csharp.Application.Services
             {
                 { JwtRegisteredClaimNames.Sub, user.Id.ToString() },
                 { JwtRegisteredClaimNames.UniqueName, user.Login },
-                { ClaimTypes.Role, user.UserRole.ToString() } 
+                { ClaimTypes.Role, user.UserRole.ToString() }
             };
 
             var tokenDescriptor = new SecurityTokenDescriptor

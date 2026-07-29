@@ -9,7 +9,7 @@ namespace YAP_middle_csharp.Domain.Exceptions
     {
         public int Limit { get; }
 
-        public BookingLimitExceededException(int limit) 
+        public BookingLimitExceededException(int limit)
             : base($"Превышет максимальный лимит активных бронирований (Лимит: {limit})", 409, "Booking Limit Exceeded")
         {
             Limit = limit;

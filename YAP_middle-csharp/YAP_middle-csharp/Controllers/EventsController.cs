@@ -12,7 +12,7 @@ namespace YAP_middle_csharp.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
-    public class EventsController(IUserContextService userContext, 
+    public class EventsController(IUserContextService userContext,
         IEventService eventService,
         IBookingService bookingService,
         ILogger<EventsController> logger) : ControllerBase
@@ -39,7 +39,7 @@ namespace YAP_middle_csharp.Controllers
             [FromQuery] string? title,
             [FromQuery] DateTime? from,
             [FromQuery] DateTime? to,
-            [FromQuery, Range(1, int.MaxValue, ErrorMessage ="Номер страницы должен быть не менее 1")] int page = 1,
+            [FromQuery, Range(1, int.MaxValue, ErrorMessage = "Номер страницы должен быть не менее 1")] int page = 1,
             [FromQuery, Range(1, 200, ErrorMessage = "Размер страницы должен быть от 1 до 200")] int pageSize = 10)
         {
             _logger.LogDebug("[EventsController] [GetAllEvents]");
@@ -143,7 +143,7 @@ namespace YAP_middle_csharp.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> CancelBookingAsync([FromRoute] Guid eventId, [FromRoute] Guid bookingId) 
+        public async Task<IActionResult> CancelBookingAsync([FromRoute] Guid eventId, [FromRoute] Guid bookingId)
         {
             var currentUserId = _userContext.GetCurrentUserId(User);
             var currentUserRole = _userContext.GetCurrentUserRole(User);

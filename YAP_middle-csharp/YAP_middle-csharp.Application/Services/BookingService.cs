@@ -22,8 +22,8 @@ namespace YAP_middle_csharp.Application.Services
         private readonly IEventService _eventService = eventService;
         private readonly IUserRepository _userRepository = userRepository;
 
-        private readonly static SemaphoreSlim _bookingSemaphore = new (1, 1);
-        private readonly static SemaphoreSlim _bookingCancelledSemaphore = new (1, 1);
+        private readonly static SemaphoreSlim _bookingSemaphore = new(1, 1);
+        private readonly static SemaphoreSlim _bookingCancelledSemaphore = new(1, 1);
 
 
         /// <summary>
@@ -182,7 +182,7 @@ namespace YAP_middle_csharp.Application.Services
                 if (activeBookingsCount >= 10)
                 {
                     _logger.LogWarning("[BookingService] [CreateBookingAsync] Пользователь {UserId} превысил лимит активных броней", userId);
-                    throw new BookingLimitExceededException(10); 
+                    throw new BookingLimitExceededException(10);
                 }
 
                 bool hasSeat = findEvent.TryReserveSeats(1);
@@ -299,7 +299,7 @@ namespace YAP_middle_csharp.Application.Services
                 if (findBooking.UserId != currentUserId && currentUserRole != UserRoleEnum.Admin)
                 {
                     _logger.LogWarning("[BookingService] [CancelledBookingAsync] Пользователь: {UserId} пытается отменить чужую бронь: {BookingId}", currentUserId, bookingId);
-                    throw new UnauthorizedOperationException(); 
+                    throw new UnauthorizedOperationException();
                 }
 
                 if (findBooking.EventId != eventId)
@@ -328,7 +328,7 @@ namespace YAP_middle_csharp.Application.Services
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "[BookingService] [CancelledBookingAsync] Произошла ошибка при отмене бронирования: {bookingId} для события: {eventId}", bookingId, eventId); 
+                _logger.LogWarning(ex, "[BookingService] [CancelledBookingAsync] Произошла ошибка при отмене бронирования: {bookingId} для события: {eventId}", bookingId, eventId);
                 throw;
             }
             finally

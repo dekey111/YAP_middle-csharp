@@ -78,7 +78,7 @@ namespace EventApi.IntegrationTests
             var filteredAndPaginated = query.Items;
 
             Assert.Single(filteredAndPaginated);
-            Assert.Contains("C#", filteredAndPaginated.First().Title); 
+            Assert.Contains("C#", filteredAndPaginated.First().Title);
         }
 
         [Fact]
