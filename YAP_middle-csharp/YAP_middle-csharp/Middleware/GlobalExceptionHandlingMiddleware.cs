@@ -72,9 +72,12 @@ namespace YAP_middle_csharp.Middleware
                 Instance = httpContext.Request.Path
             };
 
+            var exceptionTypeName = ex.GetType().Name;
+            var errorKey = exceptionTypeName.EndsWith("Exception") ? exceptionTypeName.Substring(0, exceptionTypeName.Length - 9) : exceptionTypeName;
+
             var errors = new Dictionary<string, string[]>
             {
-                { "EventValidation", [ex.Message] }
+                { errorKey, [ex.Message] }
             };
             problemDetails.Extensions.TryAdd("errors", errors);
 
