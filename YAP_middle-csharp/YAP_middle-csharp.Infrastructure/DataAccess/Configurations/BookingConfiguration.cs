@@ -30,6 +30,7 @@ namespace YAP_middle_csharp.Infrastructure.DataAccess.Configurations
             builder.HasOne<UserModel>()
                 .WithMany()
                 .HasForeignKey(x => x.UserId)
+                .IsRequired()
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

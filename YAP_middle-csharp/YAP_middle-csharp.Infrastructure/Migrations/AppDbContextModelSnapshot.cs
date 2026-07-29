@@ -109,6 +109,15 @@ namespace YAP_middle_csharp.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Users", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
+                            Login = "system_legacy_user",
+                            PasswordHash = "legacy_hash",
+                            UserRole = "User"
+                        });
                 });
 
             modelBuilder.Entity("YAP_middle_csharp.Domain.Models.BookingModel", b =>
@@ -122,8 +131,7 @@ namespace YAP_middle_csharp.Infrastructure.Migrations
                     b.HasOne("YAP_middle_csharp.Domain.Models.UserModel", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Event");
                 });

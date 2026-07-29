@@ -11,13 +11,6 @@ namespace YAP_middle_csharp.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<Guid>(
-                name: "UserId",
-                table: "Bookings",
-                type: "uuid",
-                nullable: false,
-                defaultValue: new Guid("00000000-0000-0000-0000-000000000000"));
-
             migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
@@ -33,15 +26,38 @@ namespace YAP_middle_csharp.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Bookings_UserId",
-                table: "Bookings",
-                column: "UserId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Users_Login",
                 table: "Users",
                 column: "Login",
                 unique: true);
+
+            migrationBuilder.InsertData(
+                table: "Users",
+                columns: new[] { "Id", "Login", "PasswordHash", "UserRole" },
+                values: new object[] { new Guid("11111111-1111-1111-1111-111111111111"), "system_legacy_user", "legacy_hash", "User" });
+
+            migrationBuilder.AddColumn<Guid>(
+                name: "UserId",
+                table: "Bookings",
+                type: "uuid",
+                nullable: true);
+
+            migrationBuilder.Sql(
+                "UPDATE \"Bookings\" SET \"UserId\" = '11111111-1111-1111-1111-111111111111' WHERE \"UserId\" IS NULL;");
+
+            migrationBuilder.AlterColumn<Guid>(
+                name: "UserId",
+                table: "Bookings",
+                type: "uuid",
+                nullable: false,
+                oldClrType: typeof(Guid),
+                oldType: "uuid",
+                oldNullable: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Bookings_UserId",
+                table: "Bookings",
+                column: "UserId");
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Bookings_Users_UserId",
@@ -59,9 +75,6 @@ namespace YAP_middle_csharp.Infrastructure.Migrations
                 name: "FK_Bookings_Users_UserId",
                 table: "Bookings");
 
-            migrationBuilder.DropTable(
-                name: "Users");
-
             migrationBuilder.DropIndex(
                 name: "IX_Bookings_UserId",
                 table: "Bookings");
@@ -69,6 +82,9 @@ namespace YAP_middle_csharp.Infrastructure.Migrations
             migrationBuilder.DropColumn(
                 name: "UserId",
                 table: "Bookings");
+
+            migrationBuilder.DropTable(
+                name: "Users");
         }
     }
 }
