@@ -20,6 +20,8 @@ namespace YAP_middle_csharp_Booking.Controllers
         /// <summary>
         /// Метод получения конкретной брони по её ID
         /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         [HttpGet("{id:guid}")]
         [Authorize]
         [ProducesResponseType(typeof(BookingModel), StatusCodes.Status200OK)]
@@ -27,16 +29,19 @@ namespace YAP_middle_csharp_Booking.Controllers
         public async Task<IActionResult> GetBookingAsync([FromRoute] Guid id)
         {
             var idUserFromRequest = _userContext.GetCurrentUserId(User);
+            var currentUserRole = _userContext.GetCurrentUserRole(User); 
 
             _logger.LogInformation("[BookingsController] Запрос данных брони {BookingId}", id);
 
-            var booking = await _bookingService.FindByIdForUserAsync(id, idUserFromRequest);
+            var booking = await _bookingService.FindByIdForUserAsync(id, idUserFromRequest, currentUserRole);
             return Ok(booking);
         }
 
         /// <summary>
         /// Создание нового бронирования на событие
         /// </summary>
+        /// <param name="eventId"></param>
+        /// <returns></returns>
         [HttpPost("events/{eventId:guid}")]
         [Authorize]
         [ProducesResponseType(typeof(BookingModel), StatusCodes.Status202Accepted)]
@@ -67,6 +72,9 @@ namespace YAP_middle_csharp_Booking.Controllers
         /// <summary>
         /// Отмена бронирования
         /// </summary>
+        /// <param name="bookingId"></param>
+        /// <param name="eventId"></param>
+        /// <returns></returns>
         [HttpDelete("{bookingId:guid}")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status204NoContent)]

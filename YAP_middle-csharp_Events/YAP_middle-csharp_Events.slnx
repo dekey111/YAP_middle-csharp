@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="../YAP_middle_csharp.Contracts/YAP_middle_csharp.Contracts/YAP_middle_csharp.Contracts.csproj" />
   <Project Path="YAP_middle-csharp_Events.Application/YAP_middle-csharp_Events.Application.csproj" Id="3fb5d074-ed97-45c0-9a0e-1548ccd02b1d" />
   <Project Path="YAP_middle-csharp_Events.Domain/YAP_middle-csharp_Events.Domain.csproj" Id="a940f0ca-9bf5-4eb4-bb22-2f0f38616478" />
   <Project Path="YAP_middle-csharp_Events.Infrastructure/YAP_middle-csharp_Events.Infrastructure.csproj" Id="ba45997d-89cf-4c04-8b90-4b3612bf44fc" />

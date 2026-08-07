@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\YAP_middle_csharp.Contracts\YAP_middle_csharp.Contracts\YAP_middle_csharp.Contracts.csproj" />
     <ProjectReference Include="..\YAP_middle-csharp_Auth.Domain\YAP_middle-csharp_Auth.Domain.csproj" />
   </ItemGroup>
 

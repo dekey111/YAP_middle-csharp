@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using YAP_middle_csharp.Contracts.EventModels;
 using YAP_middle_csharp_Events.Application.Interfaces.IServices;
 using YAP_middle_csharp_Events.Application.Models;
+using YAP_middle_csharp_Events.Domain.Exceptions;
 
 namespace YAP_middle_csharp_Events.Controllers
 {
@@ -46,28 +48,6 @@ namespace YAP_middle_csharp_Events.Controllers
                 Page = result.Page,
                 PageSize = result.PageSize
             });
-        }
-
-        /// <summary>
-        /// Метод получения конкретного события по id
-        /// </summary>
-        /// <param name="id">Принимает существующий id из списка событий</param>
-        /// <returns>Возвращает статус 200 и найденный элемент, либо 404 с комментарием</returns>
-        [HttpGet("{id:Guid}")]
-        [ProducesResponseType(typeof(EventUpdateRequest), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetEventByIdAsync([FromRoute] Guid id)
-        {
-            _logger.LogDebug("[EventsController] [GetEventById] Запрос на поиск EventId: {EventId}", id);
-
-            var findEvent = await _eventService.FindByIdAsync(id);
-            if (findEvent == null)
-            {
-                _logger.LogDebug("[EventsController] [GetEventById] Event c id: {EventId} не найден!", id);
-                throw new KeyNotFoundException($"Event c id: {id} не найден!");
-            }
-
-            return Ok(new EventUpdateRequest(findEvent));
         }
 
         /// <summary>
@@ -126,6 +106,79 @@ namespace YAP_middle_csharp_Events.Controllers
 
             await _eventService.DeleteAsync(id);
             return NoContent();
+        }
+
+
+
+
+
+
+        /// <summary>
+        /// Метод получения конкретного события по id
+        /// </summary>
+        /// <param name="id">Принимает существующий id из списка событий</param>
+        /// <returns>Возвращает статус 200 и найденный элемент, либо 404 с комментарием</returns>
+        [HttpGet("{id:Guid}")]
+        [ProducesResponseType(typeof(EventUpdateRequest), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetEventByIdAsync([FromRoute] Guid id)
+        {
+            _logger.LogDebug("[EventsController] [GetEventById] Запрос на поиск EventId: {EventId}", id);
+
+            var eventContract = await _eventService.GetEventContractByIdAsync(id);
+            if (eventContract == null)
+            {
+                _logger.LogDebug("[EventsController] [GetEventById] Event c id: {EventId} не найден!", id);
+                throw new NotFoundExceptionApp($"Event с id: {id} не найден!");
+            }
+
+            return Ok(eventContract);
+        }
+
+
+
+        /// <summary>
+        /// Зарезервировать место на событие
+        /// </summary>
+        /// <param name="id">УИ события</param>
+        /// <param name="request">Класс с количеством мест </param>
+        /// <returns></returns>
+        /// <exception cref="ReleaseReserveException"></exception>
+        [HttpPost("{id:guid}/reserve")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> ReserveSeatAsync([FromRoute] Guid id, [FromBody] ReserveSeatRequest request)
+        {
+            _logger.LogInformation("[EventsController] Запрос на резервирование мест на событие {EventId}", id);
+
+            bool success = await _eventService.ReserveSeatAsync(id, request.SeatsCount);
+            if (!success)
+                throw new ReleaseReserveException("Не удалось зарезервировать место на событие");
+
+            return Ok();
+        }
+
+        /// <summary>
+        /// Освободить место на событие
+        /// </summary>
+        /// <param name="id">УИ события</param>
+        /// <param name="request">Класс с количеством мест </param>
+        /// <returns></returns>
+        /// <exception cref="ReleaseReserveException"></exception>
+        [HttpPost("{id:guid}/release")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> ReleaseSeatAsync([FromRoute] Guid id, [FromBody] ReserveSeatRequest request)
+        {
+            _logger.LogInformation("[EventsController] Запрос на освобождение мест события {EventId}", id);
+
+            bool success = await _eventService.ReleaseSeatAsync(id, request.SeatsCount);
+            if (!success)
+                throw new ReleaseReserveException("Не удалось освободить место на событие");
+
+            return Ok();
         }
     }
 }

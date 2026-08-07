@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using YAP_middle_csharp_Booking.Application.Interfaces.IApi;
 using YAP_middle_csharp_Booking.Application.Interfaces.IRepositories;
 using YAP_middle_csharp_Booking.Domain.Models;
 
@@ -13,9 +14,7 @@ namespace YAP_middle_csharp_Booking.Application.Services.BackgroundServices
     /// </summary>
     /// <param name="serviceProvider">Принимает провайдер, чтобы найти BookingRepository</param>
     /// <param name="logger">Принимает логгер</param>
-    public class BackgroundBookingService(
-        IServiceScopeFactory serviceProvider,
-        ILogger<BackgroundBookingService> logger) : BackgroundService
+    public class BackgroundBookingService(IServiceScopeFactory serviceProvider, ILogger<BackgroundBookingService> logger) : BackgroundService
     {
         private readonly IServiceScopeFactory _serviceProvider = serviceProvider;
         private readonly ILogger<BackgroundBookingService> _logger = logger;
@@ -73,27 +72,26 @@ namespace YAP_middle_csharp_Booking.Application.Services.BackgroundServices
             using (var scope = _serviceProvider.CreateScope())
             {
                 var bookingRepository = scope.ServiceProvider.GetRequiredService<IBookingRepository>();
-                var eventService = scope.ServiceProvider.GetRequiredService<IEventService>();
+                var eventApiClient = scope.ServiceProvider.GetRequiredService<IEventApiClient>();
 
-                EventModel? findEvent = null;
                 BookingModel? booking = null;
 
                 try
                 {
                     booking = await bookingRepository.FindByIdAsync(pendingBookId);
+
                     if (booking == null || booking.Status != BookingStatusEnum.Pending)
                         return;
 
 
                     _logger.LogInformation("[BackgroundBookingService] Взяли в работу ID: {idBook}", pendingBookId);
-                    findEvent = await eventService.FindByIdAsync(booking.EventId);
+                    var findEvent = await eventApiClient.GetEventByIdAsync(booking.EventId, stoppingToken);
                     if (findEvent == null)
                     {
                         _logger.LogWarning("[BackgroundBookingService] Событие {EventId} не найдено для брони {BookingId}. Отклонение.", booking.EventId, pendingBookId);
 
                         booking.Status = BookingStatusEnum.Rejected;
                         booking.ProcessedAt = DateTime.UtcNow;
-
                         await bookingRepository.UpdateAsync(booking);
                         return;
                     }
@@ -109,25 +107,19 @@ namespace YAP_middle_csharp_Booking.Application.Services.BackgroundServices
                 {
                     _logger.LogDebug("[BackgroundBookingService] Обработка брони {Id} отменена.", pendingBookId);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    _logger.LogError(ex, "[BackgroundBookingService] Ошибка при обработке брони {Id}", pendingBookId);
+
+
                     if (booking != null)
                     {
                         booking.Status = BookingStatusEnum.Rejected;
                         booking.ProcessedAt = DateTime.UtcNow;
                         await bookingRepository.UpdateAsync(booking);
-
-                        if (findEvent == null)
-                        {
-                            findEvent = await eventService.FindByIdAsync(booking.EventId);
-                        }
-
-                        if (findEvent != null)
-                        {
-                            findEvent.ReleaseSeats(1);
-                            await eventService.UpdateAsync(findEvent);
-                        }
+                        await eventApiClient.ReleaseSeatAsync(booking.EventId, 1, stoppingToken);
                     }
+
                     throw;
                 }
             }

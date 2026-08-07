@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using YAP_middle_csharp.Contracts.EventModels;
 using YAP_middle_csharp_Events.Application.Interfaces;
 using YAP_middle_csharp_Events.Application.Interfaces.IRepositories;
 using YAP_middle_csharp_Events.Application.Interfaces.IServices;
@@ -171,6 +172,88 @@ namespace YAP_middle_csharp_Events.Application.Services
 
             await _repository.DeleteAsync(findEvent);
             _logger.LogInformation("[EventService] [Delete] Event ID: {Id}, успешно удалён!", id);
+        }
+
+
+        /// <summary>
+        /// Получение Contract события для внешних сервисов (BookingService)
+        /// </summary>
+        /// <param name="id">Уникальный индентификатор события</param>
+        /// <returns>Возвращает сущность события, иначе null</returns>
+        public async Task<EventContract?> GetEventContractByIdAsync(Guid id)
+        {
+            var findEvent = await _repository.FindByIdAsync(id);
+            if (findEvent == null)
+                return null;
+
+            return new EventContract
+            {
+                Id = findEvent.Id,
+                Title = findEvent.Title,
+                StartAt = findEvent.StartAt,
+                EndAt = findEvent.EndAt,
+                AvailableSeats = findEvent.AvailableSeats
+            };
+        }
+
+        /// <summary>
+        /// Попытка резервирования места
+        /// </summary>
+        /// <param name="eventId">Уникальный идентификатор события</param>
+        /// <param name="count">Количество мест</param>
+        /// <returns>true - при успехе, иначе false</returns>
+        public async Task<bool> ReserveSeatAsync(Guid eventId, int count = 1)
+        {
+            _logger.LogDebug("[EventService] [ReserveSeat] Попытка зарезервировать {Count} мест для Event ID: {EventId}", count, eventId);
+
+            var findEvent = await _repository.FindByIdAsync(eventId);
+            if (findEvent == null)
+            {
+                _logger.LogWarning("[EventService] [ReserveSeat] Event ID: {EventId} не найден", eventId);
+                return false;
+            }
+
+            bool success = findEvent.TryReserveSeats(count);
+            if (!success)
+            {
+                _logger.LogWarning("[EventService] [ReserveSeat] Недостаточно мест для Event ID: {EventId}", eventId);
+                return false;
+            }
+
+            await _repository.UpdateAsync(findEvent);
+            _logger.LogInformation("[EventService] [ReserveSeat] Зарезервировано {Count} мест для Event ID: {EventId}", count, eventId);
+
+            return true;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="eventId">Уникальный идентификатор события</param>
+        /// <param name="count">Количество мест</param>
+        /// <returns>true - при успехе, иначе false</returns>
+        public async Task<bool> ReleaseSeatAsync(Guid eventId, int count = 1)
+        {
+            _logger.LogDebug("[EventService] [ReleaseSeat] Попытка освободить {Count} мест для Event ID: {EventId}", count, eventId);
+
+            var findEvent = await _repository.FindByIdAsync(eventId);
+            if (findEvent == null)
+            {
+                _logger.LogWarning("[EventService] [ReleaseSeat] Event ID: {EventId} не найден", eventId);
+                return false;
+            }
+
+            bool success = findEvent.ReleaseSeats(count);
+            if (!success)
+            {
+                _logger.LogWarning("[EventService] [ReleaseSeat] Не удалось освободить места для Event ID: {EventId}", eventId);
+                return false;
+            }
+
+            await _repository.UpdateAsync(findEvent);
+            _logger.LogInformation("[EventService] [ReleaseSeat] Освобождено {Count} мест для Event ID: {EventId}", count, eventId);
+
+            return true;
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
+using YAP_middle_csharp_Booking.Application.Interfaces.IApi;
 using YAP_middle_csharp_Booking.Application.Interfaces.IRepositories;
 using YAP_middle_csharp_Booking.Application.Interfaces.IServices;
-using YAP_middle_csharp_Booking.Application.Models;
 using YAP_middle_csharp_Booking.Domain.Exceptions;
 using YAP_middle_csharp_Booking.Domain.Models;
 
@@ -22,47 +22,33 @@ namespace YAP_middle_csharp_Booking.Application.Services
         private static readonly SemaphoreSlim _bookingSemaphore = new(1, 1);
         private static readonly SemaphoreSlim _bookingCancelledSemaphore = new(1, 1);
 
-        public async Task<PaginatedResult<BookingModel>> FindAllAsync(string? title = null, DateTime? from = null, DateTime? to = null, int page = 1, int pageSize = 10)
-        {
-            _logger.LogDebug("[BookingService] [FindAll] Начало выполнения FindAll: page={Page}, pSize={pSize}", page, pageSize);
 
-            if (page < 1)
-                throw new ValidationExceptionApp("Номер страницы должен быть не менее 1");
-
-            if (pageSize < 1 || pageSize > 200)
-                throw new ValidationExceptionApp("Размер страницы должен быть от 1 до 200");
-
-            return await _repository.GetPagedAsync(title, from, to, page, pageSize);
-        }
-
+        /// <summary>
+        /// Метод получения необработанных заявок
+        /// </summary>
+        /// <returns>Возвращает список</returns>
         public async Task<IEnumerable<BookingModel>> FindPendingBookingAsync()
         {
             _logger.LogInformation("[BookingService] [FindPendingBooking] Запрос на получение необработанных заявок");
             return await _repository.FindPendingBookingsAsync();
         }
 
-        public async Task<BookingModel> FindByIdAsync(Guid id)
-        {
-            _logger.LogDebug("[BookingService] [FindByIdAsync] Попытка найти Booking с ID = {id}", id);
-
-            var findBooking = await _repository.FindByIdAsync(id);
-            if (findBooking == null)
-            {
-                _logger.LogWarning("[BookingService] [FindByIdAsync] Бронь {BookingId} не найдена", id);
-                throw new NotFoundExceptionApp("Бронь не найдена");
-            }
-
-            return findBooking;
-        }
-
         /// <summary>
-        /// Поиск брони с проверкой прав (Без запроса в БД Users — роль берем из claims токена)
+        /// Метод получения брони по УИ с проверкой прав доступа
         /// </summary>
+        /// <param name="id">Уникальный идентификатор бронирования</param>
+        /// <param name="currentUserId">Уникальный идентификатор пользователя запроса</param>
+        /// <returns>Возвращает найденную бронь или 400</returns>
         public async Task<BookingModel?> FindByIdForUserAsync(Guid id, Guid idUserFromRequest, UserRoleEnum userRole)
         {
             _logger.LogDebug("[BookingService] [FindByIdForUserAsync] Попытка найти Booking с ID = {id}", id);
 
-            var findBooking = await FindByIdAsync(id);
+            var findBooking = await _repository.FindByIdAsync(id);
+            if(findBooking == null)
+            {
+                _logger.LogWarning("[BookingService] [FindByIdForUserAsync] Бронирование с id: {idBooking}, не найдено", id);
+                throw new NotFoundExceptionApp("Бронирование не найдено!");
+            }
 
             if (userRole != UserRoleEnum.Admin && findBooking.UserId != idUserFromRequest)
             {
@@ -73,14 +59,11 @@ namespace YAP_middle_csharp_Booking.Application.Services
             return findBooking;
         }
 
-        public async Task<Guid> CreateAsync(BookingModel entity)
-        {
-            if (entity is null)
-                throw new ValidationExceptionApp(nameof(entity));
-
-            await _repository.CreateAsync(entity);
-            return entity.Id;
-        }
+        /// <summary>
+        /// Метод для создания новой брони для события
+        /// </summary>
+        /// <param name="eventId">УИ события</param>
+        /// <returns>Возвращает созданную бронь</returns>
 
         public async Task<BookingModel> CreateBookingAsync(Guid eventId, Guid userId)
         {
@@ -128,6 +111,12 @@ namespace YAP_middle_csharp_Booking.Application.Services
             }
         }
 
+
+        /// <summary>
+        /// Обновление данных существующей записи
+        /// </summary>
+        /// <param name="entity">Объект сущности с обновленными данными</param>
+        /// <returns>Возвращает обновленный объект сущности</returns>
         public async Task<BookingModel> UpdateAsync(BookingModel entity)
         {
             if (entity is null)
@@ -144,18 +133,11 @@ namespace YAP_middle_csharp_Booking.Application.Services
             return findBooking;
         }
 
-        public async Task DeleteAsync(BookingModel entity)
-        {
-            if (entity is null)
-                throw new ValidationExceptionApp(nameof(entity));
-
-            var findBooking = await _repository.FindByIdAsync(entity.Id);
-            if (findBooking is null)
-                throw new NotFoundExceptionApp("Booking не найден!");
-
-            await _repository.DeleteAsync(findBooking);
-        }
-
+        /// <summary>
+        /// Метод отмены бронирования
+        /// </summary>
+        /// <param name="eventId">Принимает УИ события</param>
+        /// <param name="bookingId">Принимает уникальный идентификатор бронирования</param>
         public async Task CancelledBookingAsync(Guid eventId, Guid bookingId, Guid currentUserId, UserRoleEnum currentUserRole)
         {
             _logger.LogWarning("[BookingService] [CancelledBookingAsync] Попытка отмены бронирования: {bookingId}", bookingId);
@@ -199,4 +181,21 @@ namespace YAP_middle_csharp_Booking.Application.Services
             }
         }
 
+        /// <summary>
+        /// Удаление записи из системы
+        /// </summary>
+        /// <param name="entity">Объект сущности для удаления</param>
+        /// <returns>Ничего не возвращает</returns>
+        public async Task DeleteAsync(BookingModel entity)
+        {
+            if (entity is null)
+                throw new ValidationExceptionApp(nameof(entity));
+
+            var findBooking = await _repository.FindByIdAsync(entity.Id);
+            if (findBooking is null)
+                throw new NotFoundExceptionApp("Booking не найден!");
+
+            await _repository.DeleteAsync(findBooking);
+        }
     }
+}

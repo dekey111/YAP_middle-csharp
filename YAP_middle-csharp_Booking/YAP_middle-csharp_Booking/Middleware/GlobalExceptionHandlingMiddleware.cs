@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using YAP_middle_csharp_Booking.Domain.Exceptions;
 
 namespace YAP_middle_csharp_Booking.Middleware
 {
