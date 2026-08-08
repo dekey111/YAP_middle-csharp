@@ -3,6 +3,8 @@ using Microsoft.Extensions.DependencyInjection;
 using YAP_middle_csharp_Events.Application.Interfaces.IRepositories;
 using YAP_middle_csharp_Events.Infrastructure.DataAccess;
 using YAP_middle_csharp_Events.Infrastructure.Repository;
+using YAP_middle_csharp_Events.Infrastructure.Services;
+using YAP_middle_csharp_Events.Infrastructure.Topic;
 
 namespace YAP_middle_csharp_Events.Infrastructure
 {
@@ -13,6 +15,10 @@ namespace YAP_middle_csharp_Events.Infrastructure
             services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString).LogTo(Console.WriteLine));
 
             services.AddScoped<IEventRepository, EventRepository>();
+
+            services.AddHostedService<KafkaTopicInit>();
+
+            services.AddHostedService<BackgroundEventService>();
 
             return services;
         }
