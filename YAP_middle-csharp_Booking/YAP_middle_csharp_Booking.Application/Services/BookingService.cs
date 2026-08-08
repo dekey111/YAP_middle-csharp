@@ -104,7 +104,6 @@ namespace YAP_middle_csharp_Booking.Application.Services
             }
         }
 
-
         /// <summary>
         /// Обновление данных существующей записи
         /// </summary>

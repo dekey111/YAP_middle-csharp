@@ -77,7 +77,10 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
         ValidateIssuerSigningKey = true,
 
-        ClockSkew = TimeSpan.Zero
+        ClockSkew = TimeSpan.Zero, 
+
+        RoleClaimType = System.Security.Claims.ClaimTypes.Role, 
+        NameClaimType = System.Security.Claims.ClaimTypes.NameIdentifier
     };
 });
 
