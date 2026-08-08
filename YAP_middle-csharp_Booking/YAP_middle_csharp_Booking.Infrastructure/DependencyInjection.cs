@@ -8,6 +8,7 @@ using YAP_middle_csharp_Booking.Application.Services;
 using YAP_middle_csharp_Booking.Infrastructure.Api;
 using YAP_middle_csharp_Booking.Infrastructure.DataAccess;
 using YAP_middle_csharp_Booking.Infrastructure.Repository;
+using YAP_middle_csharp_Booking.Infrastructure.Services;
 
 namespace YAP_middle_csharp_Booking.Infrastructure
 {
@@ -31,6 +32,8 @@ namespace YAP_middle_csharp_Booking.Infrastructure
             services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString).LogTo(Console.WriteLine));
 
             services.AddScoped<IBookingRepository, BookingRepository>();
+
+            services.AddSingleton<IKafkaEventProducer, KafkaEventProducer>();
 
             return services;
         }

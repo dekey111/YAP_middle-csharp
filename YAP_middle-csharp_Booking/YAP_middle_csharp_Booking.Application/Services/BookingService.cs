@@ -92,13 +92,6 @@ namespace YAP_middle_csharp_Booking.Application.Services
                     throw new BookingLimitExceededException(10);
                 }
 
-                bool seatReserved = await _eventApiClient.TryReserveSeatAsync(eventId);
-                if (!seatReserved)
-                {
-                    _logger.LogWarning("[BookingService] [CreateBookingAsync] Недостаточно мест на событие {EventId}", eventId);
-                    throw new NoAvailableSeatsExceptionApp("Недостаточно мест на событие");
-                }
-
                 var newBooking = new BookingModel(eventId, userId);
                 await _repository.CreateAsync(newBooking);
 
@@ -170,8 +163,6 @@ namespace YAP_middle_csharp_Booking.Application.Services
 
                 findBooking.Cancel();
                 await _repository.UpdateAsync(findBooking);
-
-                await _eventApiClient.ReleaseSeatAsync(findBooking.EventId);
 
                 _logger.LogInformation("[BookingService] [CancelledBookingAsync] Бронь: {bookingId} успешно отменена", bookingId);
             }
