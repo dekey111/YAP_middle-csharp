@@ -12,7 +12,7 @@ namespace YAP_middle_csharp_Auth.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
-    public class AuthController(IUserService userService, IValidator<LoginRequest> validator, ILogger<AuthController> logger) : ControllerBase
+    public class AuthController(IUserService userService, ILogger<AuthController> logger, IValidator<LoginRequest> validator) : ControllerBase
     {
         private readonly IUserService _userService = userService;
         private readonly ILogger<AuthController> _logger = logger;
@@ -29,7 +29,7 @@ namespace YAP_middle_csharp_Auth.Controllers
         {
             _logger.LogInformation("[AuthController] [RegisterUserAsync] Запрос на регистрацию пользователя: {Login}", request.Login);
 
-            if (!validator.IsValid(request))
+            if (!_validator.IsValid(request))
             {
                 _logger.LogDebug("[AuthController] [RegisterUserAsync] неуспешная регистрация пользователя: {login}", request.Login);
                 throw new ValidationExceptionApp("Проверьте правильность заполненных данных!");
@@ -53,7 +53,7 @@ namespace YAP_middle_csharp_Auth.Controllers
             _logger.LogInformation("[AuthController] [RegisterAdminAsync] Запрос на регистрацию администратора: {Login}", request.Login);
 
 
-            if (!validator.IsValid(request))
+            if (!_validator.IsValid(request))
             {
                 _logger.LogDebug("[AuthController] [RegisterAdminAsync] неуспешная регистрация администратора: {login}", request.Login);
                 throw new ValidationExceptionApp("Проверьте правильность заполненных данных!");
@@ -75,7 +75,7 @@ namespace YAP_middle_csharp_Auth.Controllers
         {
             _logger.LogInformation("[AuthController] Запрос на вход пользователя: {Login}", request.Login);
 
-            if (!validator.IsValid(request))
+            if (!_validator.IsValid(request))
             {
                 _logger.LogDebug("[AuthController] [RegisterAdminAsync] неуспешная авториация. Login: {login}", request.Login);
                 throw new ValidationExceptionApp("Проверьте правильность заполненных данных!");
