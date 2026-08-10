@@ -16,6 +16,8 @@ namespace YAP_middle_csharp_Booking.Domain.Models
         public required Guid UserId { get; set; }
         public required BookingStatusEnum Status { get; set; }
 
+        public int SeatsCount { get; set; }
+
         private DateTimeOffset _createdAt;
         public required DateTime CreatedAt
         {
@@ -45,11 +47,15 @@ namespace YAP_middle_csharp_Booking.Domain.Models
         }
 
         [SetsRequiredMembers]
-        public BookingModel(Guid eventId, Guid userId)
+        public BookingModel(Guid eventId, Guid userId, int seatsCount = 1)
         {
+            if (seatsCount <= 0)
+                throw new ValidationExceptionApp("Количество мест должно быть больше 0");
+
             Id = Guid.NewGuid();
             EventId = eventId;
             Status = BookingStatusEnum.Pending;
+            SeatsCount = seatsCount;
             CreatedAt = DateTime.UtcNow;
             UserId = userId;
         }

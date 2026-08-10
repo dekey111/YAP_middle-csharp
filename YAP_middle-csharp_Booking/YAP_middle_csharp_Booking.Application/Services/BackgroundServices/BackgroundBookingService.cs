@@ -6,8 +6,6 @@ using YAP_middle_csharp_Booking.Application.Interfaces.IRepositories;
 using YAP_middle_csharp_Booking.Application.Interfaces.IServices;
 using YAP_middle_csharp_Booking.Domain.Models;
 
-
-
 namespace YAP_middle_csharp_Booking.Application.Services.BackgroundServices
 {
     /// <summary>
@@ -91,7 +89,7 @@ namespace YAP_middle_csharp_Booking.Application.Services.BackgroundServices
                     await bookingRepository.UpdateAsync(booking);
                     _logger.LogInformation("[BackgroundBookingService] Статус брони {idBook} изменен на Confirmed в БД", booking.Id);
 
-                    var confirmedEvent = new BookingConfirmedEvent(booking.Id,booking.EventId,booking.UserId, 1, booking.ProcessedAt.Value);
+                    var confirmedEvent = new BookingConfirmedEvent(booking.Id, booking.EventId, booking.UserId, booking.SeatsCount, booking.ProcessedAt.Value);
 
                     await eventProducer.ProduceBookingConfirmedAsync(confirmedEvent, stoppingToken);
                     _logger.LogInformation("[BackgroundBookingService] Событие BookingConfirmed успешно опубликовано для {idBook}", booking.Id);

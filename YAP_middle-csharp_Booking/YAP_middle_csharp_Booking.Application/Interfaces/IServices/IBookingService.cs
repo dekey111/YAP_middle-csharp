@@ -25,7 +25,7 @@ namespace YAP_middle_csharp_Booking.Application.Interfaces.IServices
         /// </summary>
         /// <param name="eventId">УИ события</param>
         /// <returns>Возвращает созданную бронь</returns>
-        Task<BookingModel> CreateBookingAsync(Guid eventId, Guid userId);
+        Task<BookingModel> CreateBookingAsync(Guid eventId, Guid userId, int seatsCount = 1);
 
         /// <summary>
         /// Обновление данных существующей записи

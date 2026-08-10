@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using YAP_middle_csharp_Booking.Application.Interfaces.IServices;
+using YAP_middle_csharp_Booking.Application.Models;
 using YAP_middle_csharp_Booking.Domain.Models;
 
 namespace YAP_middle_csharp_Booking.Controllers
@@ -48,25 +49,14 @@ namespace YAP_middle_csharp_Booking.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-        public async Task<IActionResult> AddBookingByEventIdAsync([FromRoute] Guid eventId)
+        public async Task<IActionResult> AddBookingByEventIdAsync([FromBody] CreateBookingRequest request)
         {
             var userId = _userContext.GetCurrentUserId(User);
 
-            _logger.LogInformation("[BookingsController] Запрос на бронирование события {EventId} пользователем {UserId}", eventId, userId);
+            _logger.LogInformation("[BookingsController] Запрос на бронирование события {EventId} пользователем {UserId}", request.EventId, userId);
 
-            var newBooking = await _bookingService.CreateBookingAsync(eventId, userId);
-
-            var bookingResponse = new
-            {
-                id = newBooking.Id,
-                eventId = newBooking.EventId,
-                status = newBooking.Status.ToString(),
-                createdAt = newBooking.CreatedAt,
-                processedAt = newBooking.ProcessedAt,
-                userId = newBooking.UserId
-            };
-
-            return AcceptedAtAction(nameof(GetBookingAsync), new { id = newBooking.Id }, bookingResponse);
+            var newBooking = await _bookingService.CreateBookingAsync(request.EventId, userId, request.SeatsCount);
+            return AcceptedAtAction(nameof(GetBookingAsync), new { id = newBooking.Id }, newBooking);
         }
 
         /// <summary>

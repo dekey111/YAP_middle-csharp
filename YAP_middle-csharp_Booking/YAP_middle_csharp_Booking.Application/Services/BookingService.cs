@@ -56,9 +56,15 @@ namespace YAP_middle_csharp_Booking.Application.Services
         /// <param name="eventId">УИ события</param>
         /// <returns>Возвращает созданную бронь</returns>
 
-        public async Task<BookingModel> CreateBookingAsync(Guid eventId, Guid userId)
+        public async Task<BookingModel> CreateBookingAsync(Guid eventId, Guid userId, int seatsCount = 1)
         {
             _logger.LogInformation("[BookingService] [CreateBookingAsync] Попытка создать бронь для события {EventId}", eventId);
+
+            if (seatsCount <= 0)
+            {
+                _logger.LogWarning("[BookingService] [CreateBookingAsync] Пользователь {UserId} создал запись на 0 мест", userId);
+                throw new ValidationExceptionApp("Количество запрашиваемых мест должно быть больше 0");
+            }
 
             int activeBookingsCount = await _repository.CheckActiveCountBookingByUserId(userId);
             if (activeBookingsCount >= 10)
@@ -67,7 +73,7 @@ namespace YAP_middle_csharp_Booking.Application.Services
                 throw new BookingLimitExceededException(10);
             }
 
-            var newBooking = new BookingModel(eventId, userId);
+            var newBooking = new BookingModel(eventId, userId, seatsCount);
             await _repository.CreateAsync(newBooking);
 
             _logger.LogInformation("[BookingService] [CreateBookingAsync] Бронь создана: {Id}", newBooking.Id);

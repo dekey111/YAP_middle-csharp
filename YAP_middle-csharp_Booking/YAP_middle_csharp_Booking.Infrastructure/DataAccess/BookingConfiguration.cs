@@ -19,6 +19,10 @@ namespace YAP_middle_csharp_Booking.Infrastructure.DataAccess
             builder.Property(x => x.UserId)
                 .IsRequired();
 
+            builder.Property(x => x.SeatsCount)
+                .IsRequired()
+                .HasDefaultValue(1);
+
             builder.Property(x => x.Status)
                 .IsRequired()
                 .HasConversion<string>()
