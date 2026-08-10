@@ -57,6 +57,8 @@ builder.Services.AddProblemDetails(options =>
 
 var jwtOptions = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtOptions["SecretKey"] ?? throw new InvalidOperationException("SecretKey not found");
+var validIssuer = jwtOptions["Issuer"] ?? throw new InvalidOperationException("Issuer not found");
+var validAudience = jwtOptions["Audience"] ?? throw new InvalidOperationException("Audience not found");
 
 builder.Services.AddAuthentication(options =>
 {
@@ -68,10 +70,10 @@ builder.Services.AddAuthentication(options =>
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
-        ValidIssuer = jwtOptions["Issuer"], 
+        ValidIssuer = validIssuer, 
 
         ValidateAudience = true,
-        ValidAudience = jwtOptions["Audience"], 
+        ValidAudience = validAudience, 
 
         ValidateLifetime = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
