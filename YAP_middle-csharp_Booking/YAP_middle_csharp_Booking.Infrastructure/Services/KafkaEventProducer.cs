@@ -41,7 +41,7 @@ namespace YAP_middle_csharp_Booking.Infrastructure.Services
             try
             {
                 var result = await _producer.ProduceAsync(EventTopics.BookingConfirmed, message, cancellationToken);
-                _logger.LogInformation("[KafkaEventProducer] Сообщение BookingConfirmed отправлено в топик {Topic}, Partition: {Partition}, Offset: {Offset}",  result.Topic, result.Partition.Value, result.Offset.Value);
+                _logger.LogInformation("[KafkaEventProducer] Сообщение BookingConfirmed отправлено в топик {Topic}, Partition: {Partition}, Offset: {Offset}", result.Topic, result.Partition.Value, result.Offset.Value);
             }
             catch (ProduceException<string, string> ex)
             {

@@ -9,7 +9,7 @@ namespace YAP_middle_csharp_Booking.Application.Services
     /// <summary>
     /// Сервис для работы с бронями
     /// </summary>
-    public class BookingService( IBookingRepository repository, ILogger<BookingService> logger) : IBookingService
+    public class BookingService(IBookingRepository repository, ILogger<BookingService> logger) : IBookingService
     {
         private readonly ILogger<BookingService> _logger = logger;
         private readonly IBookingRepository _repository = repository;
@@ -35,7 +35,7 @@ namespace YAP_middle_csharp_Booking.Application.Services
             _logger.LogDebug("[BookingService] [FindByIdForUserAsync] Попытка найти Booking с ID = {id}", id);
 
             var findBooking = await _repository.FindByIdAsync(id);
-            if(findBooking == null)
+            if (findBooking == null)
             {
                 _logger.LogWarning("[BookingService] [FindByIdForUserAsync] Бронирование с id: {idBooking}, не найдено", id);
                 throw new NotFoundExceptionApp("Бронирование не найдено!");

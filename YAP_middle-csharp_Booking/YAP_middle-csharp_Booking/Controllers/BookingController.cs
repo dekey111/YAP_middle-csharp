@@ -30,7 +30,7 @@ namespace YAP_middle_csharp_Booking.Controllers
         public async Task<IActionResult> GetBookingAsync([FromRoute] Guid id)
         {
             var idUserFromRequest = _userContext.GetCurrentUserId(User);
-            var currentUserRole = _userContext.GetCurrentUserRole(User); 
+            var currentUserRole = _userContext.GetCurrentUserRole(User);
 
             _logger.LogInformation("[BookingsController] Запрос данных брони {BookingId}", id);
 

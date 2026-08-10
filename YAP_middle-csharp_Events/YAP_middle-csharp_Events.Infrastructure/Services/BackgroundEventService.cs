@@ -32,7 +32,7 @@ namespace YAP_middle_csharp_Events.Infrastructure.Services
                 BootstrapServers = bootstrapServers,
                 GroupId = groupId,
                 AutoOffsetReset = AutoOffsetReset.Earliest,
-                EnableAutoCommit = true 
+                EnableAutoCommit = true
             };
         }
 
@@ -52,7 +52,7 @@ namespace YAP_middle_csharp_Events.Infrastructure.Services
                     if (consumeResult?.Message?.Value == null)
                         continue;
 
-                    _logger.LogInformation("[BackgroundEventService] Получено сообщение из Partition {Partition}, Offset {Offset}",   consumeResult.Partition.Value, consumeResult.Offset.Value);
+                    _logger.LogInformation("[BackgroundEventService] Получено сообщение из Partition {Partition}, Offset {Offset}", consumeResult.Partition.Value, consumeResult.Offset.Value);
 
                     await ProcessMessageAsync(consumeResult.Message.Value, stoppingToken);
                 }
@@ -64,7 +64,7 @@ namespace YAP_middle_csharp_Events.Infrastructure.Services
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "[BackgroundEventService] Критическая ошибка при чтении из Kafka");
-                    await Task.Delay(1000, stoppingToken); 
+                    await Task.Delay(1000, stoppingToken);
                 }
             }
 
@@ -82,7 +82,7 @@ namespace YAP_middle_csharp_Events.Infrastructure.Services
             catch (JsonException ex)
             {
                 _logger.LogError(ex, "[BackgroundEventService] Ошибка десериализации сообщения: {Json}", messageJson);
-                return; 
+                return;
             }
 
             if (bookingConfirmedEvent == null) return;
@@ -140,10 +140,10 @@ namespace YAP_middle_csharp_Events.Infrastructure.Services
                 catch
                 {
                     await transaction.RollbackAsync(cancellationToken);
-                    throw; 
+                    throw;
                 }
 
-                
+
             }
             catch (Exception ex)
             {

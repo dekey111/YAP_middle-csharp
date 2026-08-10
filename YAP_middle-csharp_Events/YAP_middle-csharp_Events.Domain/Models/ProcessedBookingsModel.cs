@@ -8,7 +8,7 @@ namespace YAP_middle_csharp_Events.Domain.Models
     {
         public Guid Id { get; private set; }
         public Guid BookingId { get; private set; }
-        public DateTime ProcessedAt { get; private set;  }
+        public DateTime ProcessedAt { get; private set; }
         public ProcessedBookingsModel(Guid bookingId)
         {
             Id = Guid.NewGuid();

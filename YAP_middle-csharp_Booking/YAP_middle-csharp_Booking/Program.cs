@@ -15,7 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-builder.Services.AddInfrastructure(builder.Configuration, connectionString); 
+builder.Services.AddInfrastructure(builder.Configuration, connectionString);
 builder.Services.AddApplication();
 
 builder.Services.AddControllers(options =>
@@ -70,18 +70,18 @@ builder.Services.AddAuthentication(options =>
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
-        ValidIssuer = validIssuer, 
+        ValidIssuer = validIssuer,
 
         ValidateAudience = true,
-        ValidAudience = validAudience, 
+        ValidAudience = validAudience,
 
         ValidateLifetime = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
         ValidateIssuerSigningKey = true,
 
-        ClockSkew = TimeSpan.Zero, 
+        ClockSkew = TimeSpan.Zero,
 
-        RoleClaimType = System.Security.Claims.ClaimTypes.Role, 
+        RoleClaimType = System.Security.Claims.ClaimTypes.Role,
         NameClaimType = System.Security.Claims.ClaimTypes.NameIdentifier
     };
 });
