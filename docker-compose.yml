@@ -140,14 +140,11 @@ services:
       - JwtSettings__Issuer=YAP_AuthService
       - JwtSettings__Audience=YAP_Microservices
       - JwtSettings__SecretKey=SUPER_SECRET_KEY_FOR_JWT_VALIDATION_1234567890!
-      - Services__EventsUrl=http://events-service:8080
     depends_on:
       bookings-db:
         condition: service_healthy
       kafka:
         condition: service_healthy
-      events-service:                                  
-        condition: service_started
 
 volumes:
   users-db-data:

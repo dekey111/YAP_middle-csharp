@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using YAP_middle_csharp.Contracts.BookingModel;
-using YAP_middle_csharp_Booking.Application.Interfaces.IApi;
 using YAP_middle_csharp_Booking.Application.Interfaces.IRepositories;
 using YAP_middle_csharp_Booking.Application.Interfaces.IServices;
 using YAP_middle_csharp_Booking.Domain.Models;
