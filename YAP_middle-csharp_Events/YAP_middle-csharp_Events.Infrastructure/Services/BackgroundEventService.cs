@@ -3,10 +3,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Globalization;
 using System.Text.Json;
 using YAP_middle_csharp.Contracts.BookingModel;
 using YAP_middle_csharp.Contracts.EventModels;
 using YAP_middle_csharp_Events.Application.Interfaces.IRepositories;
+using YAP_middle_csharp_Events.Domain.Models;
+using YAP_middle_csharp_Events.Infrastructure.DataAccess;
 
 namespace YAP_middle_csharp_Events.Infrastructure.Services
 {
@@ -85,16 +88,31 @@ namespace YAP_middle_csharp_Events.Infrastructure.Services
             if (bookingConfirmedEvent == null) return;
 
             using var scope = _scopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var eventRepository = scope.ServiceProvider.GetRequiredService<IEventRepository>();
+            var processedRepository = scope.ServiceProvider.GetRequiredService<IProcessedBookingRepository>();
 
             try
             {
-                var eventModel = await eventRepository.FindByIdAsync(bookingConfirmedEvent.EventId);
+                bool isAlreadyProcessed = await processedRepository.ExistsAsync(bookingConfirmedEvent.BookingId, cancellationToken);
+                if (isAlreadyProcessed)
+                {
+                    _logger.LogWarning("[BookingConfirmedConsumer] Бронь {BookingId} уже была обрабнота ранее", bookingConfirmedEvent.BookingId);
+                    return;
+                }
 
+
+                var eventModel = await eventRepository.FindByIdAsync(bookingConfirmedEvent.EventId);
                 if (eventModel == null)
                 {
                     _logger.LogWarning("[BackgroundEventService] Событие {EventId} не найдено для брони {BookingId}. Пропуск.",
                         bookingConfirmedEvent.EventId, bookingConfirmedEvent.BookingId);
+                    return;
+                }
+
+                if (DateTime.UtcNow >= eventModel.StartAt)
+                {
+                    _logger.LogWarning("[BookingConfirmedConsumer] Невозможно бработать бронь: {bookindId}, событие {EventId} уже началось", bookingConfirmedEvent.BookingId, eventModel.Id);
                     return;
                 }
 
@@ -105,11 +123,27 @@ namespace YAP_middle_csharp_Events.Infrastructure.Services
                     return;
                 }
 
-                eventModel.AvailableSeats -= bookingConfirmedEvent.SeatsCount;
-                await eventRepository.UpdateAsync(eventModel);
+                using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+                try
+                {
+                    eventModel.AvailableSeats -= bookingConfirmedEvent.SeatsCount;
+                    await eventRepository.UpdateAsync(eventModel);
 
-                _logger.LogInformation("[BackgroundEventService] Успешно списано {Seats} мест для события {EventId}. Осталось: {Remaining}",
-                    bookingConfirmedEvent.SeatsCount, bookingConfirmedEvent.EventId, eventModel.AvailableSeats);
+                    await processedRepository.AddAsync(new ProcessedBookingsModel(bookingConfirmedEvent.BookingId), cancellationToken);
+
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                    await transaction.CommitAsync(cancellationToken);
+
+                    _logger.LogInformation("[BackgroundEventService] Успешно списано {Seats} мест для события {EventId}. Осталось: {Remaining}",
+                        bookingConfirmedEvent.SeatsCount, bookingConfirmedEvent.EventId, eventModel.AvailableSeats);
+                }
+                catch
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    throw; 
+                }
+
+                
             }
             catch (Exception ex)
             {

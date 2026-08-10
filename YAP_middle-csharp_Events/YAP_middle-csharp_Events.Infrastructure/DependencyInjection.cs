@@ -12,9 +12,15 @@ namespace YAP_middle_csharp_Events.Infrastructure
     {
         public static IServiceCollection AddInfrastructure(this IServiceCollection services, string connectionString)
         {
-            services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString).LogTo(Console.WriteLine));
+            services.AddDbContext<AppDbContext>(options => 
+            options.UseNpgsql(connectionString, npgsqlOption =>
+            {
+                npgsqlOption.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName);
+            })
+            .LogTo(Console.WriteLine));
 
             services.AddScoped<IEventRepository, EventRepository>();
+            services.AddScoped<IProcessedBookingRepository, ProcessedBookingRepository>();
 
             services.AddHostedService<KafkaTopicInit>();
 

@@ -11,6 +11,7 @@ namespace YAP_middle_csharp_Events.Infrastructure.DataAccess
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         public DbSet<EventModel> Events => Set<EventModel>();
+        public DbSet<ProcessedBookingsModel> ProcessedBookings => Set<ProcessedBookingsModel>();
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);

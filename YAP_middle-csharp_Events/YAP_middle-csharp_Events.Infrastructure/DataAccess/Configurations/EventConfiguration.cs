@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using YAP_middle_csharp_Events.Domain.Models;
 
-namespace YAP_middle_csharp_Events.Infrastructure.DataAccess
+namespace YAP_middle_csharp_Events.Infrastructure.DataAccess.Configurations
 {
     public class EventConfiguration : IEntityTypeConfiguration<EventModel>
     {
