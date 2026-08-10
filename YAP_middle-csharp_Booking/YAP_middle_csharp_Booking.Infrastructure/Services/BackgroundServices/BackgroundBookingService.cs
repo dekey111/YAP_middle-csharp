@@ -6,7 +6,7 @@ using YAP_middle_csharp_Booking.Application.Interfaces.IRepositories;
 using YAP_middle_csharp_Booking.Application.Interfaces.IServices;
 using YAP_middle_csharp_Booking.Domain.Models;
 
-namespace YAP_middle_csharp_Booking.Application.Services.BackgroundServices
+namespace YAP_middle_csharp_Booking.Infrastructure.Services.BackgroundServices
 {
     /// <summary>
     /// Фоновый метод для обработки поступающих заказов
