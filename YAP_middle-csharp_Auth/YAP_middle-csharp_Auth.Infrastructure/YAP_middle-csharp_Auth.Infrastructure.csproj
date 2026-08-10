@@ -19,8 +19,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\YAP_middle-csharp_Auth.Application\YAP_middle-csharp_Auth.Application.csproj" />
     <ProjectReference Include="..\YAP_middle-csharp_Auth.Domain\YAP_middle-csharp_Auth.Domain.csproj" />
-    <ProjectReference Include="..\YAP_middle-csharp_Auth_Application\YAP_middle-csharp_Auth.Application.csproj" />
   </ItemGroup>
 
 </Project>

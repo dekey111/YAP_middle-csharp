@@ -1,4 +1,4 @@
-﻿using YAP_middle_csharp.Application.Interfaces;
+﻿using YAP_middle_csharp_Booking.Application.Interfaces;
 using YAP_middle_csharp_Booking.Domain.Models;
 
 namespace YAP_middle_csharp_Booking.Application.Validator

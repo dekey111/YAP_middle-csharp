@@ -1,6 +1,6 @@
 ﻿using YAP_middle_csharp_Auth.Domain.Models;
 
-namespace YAP_middle_csharp_Auth.Domain.Interface
+namespace YAP_middle_csharp_Auth.Domain.Interfaces
 {
     public interface IPasswordHasherService
     {

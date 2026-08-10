@@ -1,4 +1,5 @@
-﻿namespace YAP_middle_csharp.Application.Interfaces
+﻿
+namespace YAP_middle_csharp_Booking.Application.Interfaces
 {
     public interface IValidator<in T>
     {

@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using YAP_middle_csharp_Auth.Application.Interfaces.IRepositories;
-using YAP_middle_csharp_Auth.Domain.Interface;
+using YAP_middle_csharp_Auth.Domain.Interfaces;
 using YAP_middle_csharp_Auth.Infrastructure.DataAccess;
 using YAP_middle_csharp_Auth.Infrastructure.Repository;
 

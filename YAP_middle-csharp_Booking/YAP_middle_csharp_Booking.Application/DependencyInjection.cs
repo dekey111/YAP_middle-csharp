@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using YAP_middle_csharp.Application.Interfaces;
+using YAP_middle_csharp_Booking.Application.Interfaces;
 using YAP_middle_csharp_Booking.Application.Interfaces.IServices;
 using YAP_middle_csharp_Booking.Application.Services;
 using YAP_middle_csharp_Booking.Application.Validator;

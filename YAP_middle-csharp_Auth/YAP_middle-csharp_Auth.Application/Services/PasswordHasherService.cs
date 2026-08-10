@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using YAP_middle_csharp_Auth.Domain.Interface;
+using YAP_middle_csharp_Auth.Domain.Interfaces;
 using YAP_middle_csharp_Auth.Domain.Models;
 
 namespace YAP_middle_csharp_Auth.Application.Services

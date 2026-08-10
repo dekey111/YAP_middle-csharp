@@ -1,7 +1,7 @@
 ﻿using YAP_middle_csharp_Auth.Application.Interfaces.IRepositories;
 using YAP_middle_csharp_Auth.Application.Interfaces.IServices;
 using YAP_middle_csharp_Auth.Domain.Exceptions;
-using YAP_middle_csharp_Auth.Domain.Interface;
+using YAP_middle_csharp_Auth.Domain.Interfaces;
 using YAP_middle_csharp_Auth.Domain.Models;
 
 namespace YAP_middle_csharp_Auth.Application.Services
