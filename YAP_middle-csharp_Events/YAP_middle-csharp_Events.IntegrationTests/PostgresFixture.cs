@@ -1,15 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Testcontainers.PostgreSql;
+﻿using Testcontainers.PostgreSql;
 
-namespace YAP_middle_csharp_Auth.IntegrationTests
+namespace YAP_middle_csharp_Events.IntegrationTests
 {
     public class PostgresFixture : IAsyncLifetime
     {
         public PostgreSqlContainer Container { get; } = new PostgreSqlBuilder()
             .WithImage("postgres:16-alpine")
-            .WithDatabase("test_auth_db")
+            .WithDatabase("test_event_db")
             .WithUsername("postgres")
             .WithPassword("postgres")
             .Build();
