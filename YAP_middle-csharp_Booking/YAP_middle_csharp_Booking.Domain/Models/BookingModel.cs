@@ -1,0 +1,74 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Text;
+using YAP_middle_csharp_Booking.Domain.Exceptions;
+
+namespace YAP_middle_csharp_Booking.Domain.Models
+{
+    /// <summary>
+    /// Базовая модель бронирований из БД
+    /// </summary>
+    public class BookingModel
+    {
+        public required Guid Id { get; set; }
+        public required Guid EventId { get; set; }
+        public required Guid UserId { get; set; }
+        public required BookingStatusEnum Status { get; set; }
+
+        public int SeatsCount { get; set; }
+
+        private DateTimeOffset _createdAt;
+        public required DateTime CreatedAt
+        {
+            get => _createdAt.UtcDateTime;
+            set => _createdAt = value.Kind == DateTimeKind.Unspecified
+                                           ? DateTime.SpecifyKind(value, DateTimeKind.Utc)
+                                           : value.ToUniversalTime();
+        }
+
+        private DateTimeOffset? _processedAt;
+        public DateTime? ProcessedAt
+        {
+            get => _processedAt?.UtcDateTime;
+            set => _processedAt = value.HasValue
+                ? (value.Value.Kind == DateTimeKind.Unspecified
+                    ? DateTime.SpecifyKind(value.Value, DateTimeKind.Utc)
+                    : value.Value.ToUniversalTime())
+                : null;
+        }
+
+
+
+
+        [SetsRequiredMembers]
+        private BookingModel()
+        {
+        }
+
+        [SetsRequiredMembers]
+        public BookingModel(Guid eventId, Guid userId, int seatsCount = 1)
+        {
+            if (seatsCount <= 0)
+                throw new ValidationExceptionApp("Количество мест должно быть больше 0");
+
+            Id = Guid.NewGuid();
+            EventId = eventId;
+            Status = BookingStatusEnum.Pending;
+            SeatsCount = seatsCount;
+            CreatedAt = DateTime.UtcNow;
+            UserId = userId;
+        }
+
+        public void Cancel()
+        {
+            if (Status != BookingStatusEnum.Pending)
+            {
+                throw new ValidationExceptionApp("Бронирование нельзя отменить, потому что оно уже обработано");
+            }
+
+            Status = BookingStatusEnum.Cancelled;
+            ProcessedAt = DateTime.UtcNow;
+        }
+    }
+}

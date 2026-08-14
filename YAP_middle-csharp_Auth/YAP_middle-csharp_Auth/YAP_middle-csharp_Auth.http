@@ -1,0 +1,6 @@
+@YAP_middle_csharp_Auth_HostAddress = http://localhost:5143
+
+GET {{YAP_middle_csharp_Auth_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

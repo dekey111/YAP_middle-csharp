@@ -1,0 +1,6 @@
+@YAP_middle_csharp_Events_HostAddress = http://localhost:5224
+
+GET {{YAP_middle_csharp_Events_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

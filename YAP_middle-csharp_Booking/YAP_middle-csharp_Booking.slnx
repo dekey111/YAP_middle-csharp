@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="../YAP_middle_csharp.Contracts/YAP_middle_csharp.Contracts/YAP_middle_csharp.Contracts.csproj" />
+  <Project Path="YAP_middle-csharp_Booking/YAP_middle-csharp_Booking.csproj" />
+  <Project Path="YAP_middle_csharp_Booking.Application/YAP_middle_csharp_Booking.Application.csproj" Id="da677a89-af79-4295-81b1-ff9699aa4ee9" />
+  <Project Path="YAP_middle_csharp_Booking.Domain/YAP_middle_csharp_Booking.Domain.csproj" Id="420ee4cf-a48d-4434-977f-88e0774641ed" />
+  <Project Path="YAP_middle_csharp_Booking.Infrastructure/YAP_middle_csharp_Booking.Infrastructure.csproj" Id="9e4c49b0-6899-482e-a2a1-cc286d98b907" />
+</Solution>
