@@ -22,8 +22,8 @@ namespace YAP_middle_csharp_Auth.Infrastructure
         public string GenerateToken(UserModel user)
         {
             var secret = _configuration["JwtSettings:SecretKey"] ?? throw new InvalidOperationException("JWT Secret is not configured");
-            var issuer = _configuration["JwtSettings:Issuer"];
-            var audience = _configuration["JwtSettings:Audience"];
+            var issuer = _configuration["JwtSettings:Issuer"] ?? throw new InvalidOperationException("Issuer is not configured");
+            var audience = _configuration["JwtSettings:Audience"] ?? throw new InvalidOperationException("Audience is not configured");
             var expiryMinutes = double.Parse(_configuration["JwtSettings:ExpiryMinutes"] ?? "60");
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
