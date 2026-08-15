@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using YAP_middle_csharp_Events.Application.Interfaces.ICache;
 using YAP_middle_csharp_Events.Application.Interfaces.IRepositories;
 using YAP_middle_csharp_Events.Infrastructure.DataAccess;
 using YAP_middle_csharp_Events.Infrastructure.Repository;
@@ -25,6 +26,8 @@ namespace YAP_middle_csharp_Events.Infrastructure
             services.AddHostedService<KafkaTopicInit>();
 
             services.AddHostedService<BackgroundEventService>();
+
+            services.AddSingleton<ICacheService, RedisService>();
 
             return services;
         }
