@@ -27,28 +27,59 @@ namespace YAP_middle_csharp_Events.Controllers
         /// <returns>Возвращается Json-Структуру и статусом 200-OK в случае успеха</returns>
         /// <returns>Возвращает 400 в случае ошибки получения страниц или количество элементов на странице</returns>
         [HttpGet]
-        [ProducesResponseType(typeof(IEnumerable<EventUpdateRequest>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(PaginatedResult<EventUpdateRequest>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetAllEventsAsync(
             [FromQuery] string? title,
             [FromQuery] DateTime? from,
             [FromQuery] DateTime? to,
             [FromQuery, Range(1, int.MaxValue, ErrorMessage = "Номер страницы должен быть не менее 1")] int page = 1,
-            [FromQuery, Range(1, 200, ErrorMessage = "Размер страницы должен быть от 1 до 200")] int pageSize = 10)
+            [FromQuery, Range(1, 200, ErrorMessage = "Размер страницы должен быть от 1 до 200")] int pageSize = 10,
+            CancellationToken cancellationToken = default)
         {
             _logger.LogDebug("[EventsController] [GetAllEvents]");
 
-            var result = await _eventService.FindAllAsync(title, from, to, page, pageSize);
-            var respondedItems = result.Items.Select(e => new EventUpdateRequest(e));
-
-            return Ok(new PaginatedResult<EventUpdateRequest>
-            {
-                Items = respondedItems,
-                TotalCount = result.TotalCount,
-                Page = result.Page,
-                PageSize = result.PageSize
-            });
+            var result = await _eventService.FindAllAsync(title, from, to, page, pageSize, cancellationToken);
+            return Ok(result);
         }
+
+        /// <summary>
+        /// Метод получения конкретного события по id
+        /// </summary>
+        /// <param name="id">Принимает существующий id из списка событий</param>
+        /// <returns>Возвращает статус 200 и найденный элемент, либо 404 с комментарием</returns>
+        [HttpGet("{id:Guid}")]
+        [ProducesResponseType(typeof(EventUpdateRequest), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetEventByIdAsync([FromRoute] Guid id, CancellationToken cancellationToken = default)
+        {
+            _logger.LogDebug("[EventsController] [GetEventById] Запрос на поиск EventId: {EventId}", id);
+
+            var eventContract = await _eventService.FindByIdAsync(id, cancellationToken);
+            if (eventContract == null)
+            {
+                _logger.LogDebug("[EventsController] [GetEventById] Event c id: {EventId} не найден!", id);
+                throw new NotFoundExceptionApp($"Event с id: {id} не найден!");
+            }
+
+            return Ok(eventContract);
+        }
+
+
+        /// <summary>
+        /// Топ-10 самых популярных событий
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        [HttpGet("top")]
+        [ProducesResponseType(typeof(IReadOnlyList<EventUpdateRequest>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetTop10EventsAsync(CancellationToken cancellationToken)
+        {
+            _logger.LogDebug("[EventsController] [GetTop10Events] Запрос на получение топ-10 событий");
+            var result = await _eventService.FindTop10EventsAsync(cancellationToken);
+            return Ok(result);
+        }
+
 
         /// <summary>
         /// Добавление нового события
@@ -60,14 +91,12 @@ namespace YAP_middle_csharp_Events.Controllers
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(EventUpdateRequest), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> AddEventAsync([FromBody] EventRequest eventRequest)
+        public async Task<IActionResult> AddEventAsync([FromBody] EventRequest eventRequest, CancellationToken cancellationToken = default)
         {
             _logger.LogDebug("[EventsController] [AddEvent] Запрос на добавление нового события");
 
-            var createdEvent = await _eventService.CreateAsync(eventRequest);
-            var newEventResponse = new EventUpdateRequest(createdEvent);
-
-            return CreatedAtAction(nameof(GetEventByIdAsync), new { id = createdEvent.Id }, newEventResponse);
+            var createdId = await _eventService.CreateAsync(eventRequest, cancellationToken);
+            return CreatedAtAction(nameof(GetEventByIdAsync), new { id = createdId }, new { id = createdId });
         }
 
         /// <summary>
@@ -83,11 +112,11 @@ namespace YAP_middle_csharp_Events.Controllers
         [ProducesResponseType(typeof(EventUpdateRequest), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> EditEventAsync([FromRoute] Guid id, [FromBody] EventUpdateRequest eventUpdateRequest)
+        public async Task<IActionResult> EditEventAsync([FromRoute] Guid id, [FromBody] EventUpdateRequest eventUpdateRequest, CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("[EventsController] [EditEvent] Запрос на изменения события {EventId}", id);
-            var updatedEvent = await _eventService.UpdateAsync(id, eventUpdateRequest);
-            return Ok(new EventUpdateRequest(updatedEvent));
+            var updatedEvent = await _eventService.UpdateAsync(id, eventUpdateRequest, cancellationToken);
+            return Ok(updatedEvent);
         }
 
         /// <summary>
@@ -100,85 +129,12 @@ namespace YAP_middle_csharp_Events.Controllers
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(EventUpdateRequest), StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> DeleteEventAsync([FromRoute] Guid id)
+        public async Task<IActionResult> DeleteEventAsync([FromRoute] Guid id, CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("[EventsController] [DeleteEvent] Запрос на удаление события {EventId}", id);
 
-            await _eventService.DeleteAsync(id);
+            await _eventService.DeleteAsync(id, cancellationToken);
             return NoContent();
-        }
-
-
-
-
-
-
-        /// <summary>
-        /// Метод получения конкретного события по id
-        /// </summary>
-        /// <param name="id">Принимает существующий id из списка событий</param>
-        /// <returns>Возвращает статус 200 и найденный элемент, либо 404 с комментарием</returns>
-        [HttpGet("{id:Guid}")]
-        [ProducesResponseType(typeof(EventUpdateRequest), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetEventByIdAsync([FromRoute] Guid id)
-        {
-            _logger.LogDebug("[EventsController] [GetEventById] Запрос на поиск EventId: {EventId}", id);
-
-            var eventContract = await _eventService.GetEventContractByIdAsync(id);
-            if (eventContract == null)
-            {
-                _logger.LogDebug("[EventsController] [GetEventById] Event c id: {EventId} не найден!", id);
-                throw new NotFoundExceptionApp($"Event с id: {id} не найден!");
-            }
-
-            return Ok(eventContract);
-        }
-
-
-
-        /// <summary>
-        /// Зарезервировать место на событие
-        /// </summary>
-        /// <param name="id">УИ события</param>
-        /// <param name="request">Класс с количеством мест </param>
-        /// <returns></returns>
-        /// <exception cref="ReleaseReserveException"></exception>
-        [HttpPost("{id:guid}/reserve")]
-        [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> ReserveSeatAsync([FromRoute] Guid id, [FromBody] ReserveSeatRequest request)
-        {
-            _logger.LogInformation("[EventsController] Запрос на резервирование мест на событие {EventId}", id);
-
-            bool success = await _eventService.ReserveSeatAsync(id, request.SeatsCount);
-            if (!success)
-                throw new ReleaseReserveException("Не удалось зарезервировать место на событие");
-
-            return Ok();
-        }
-
-        /// <summary>
-        /// Освободить место на событие
-        /// </summary>
-        /// <param name="id">УИ события</param>
-        /// <param name="request">Класс с количеством мест </param>
-        /// <returns></returns>
-        /// <exception cref="ReleaseReserveException"></exception>
-        [HttpPost("{id:guid}/release")]
-        [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> ReleaseSeatAsync([FromRoute] Guid id, [FromBody] ReserveSeatRequest request)
-        {
-            _logger.LogInformation("[EventsController] Запрос на освобождение мест события {EventId}", id);
-
-            bool success = await _eventService.ReleaseSeatAsync(id, request.SeatsCount);
-            if (!success)
-                throw new ReleaseReserveException("Не удалось освободить место на событие");
-
-            return Ok();
         }
     }
 }

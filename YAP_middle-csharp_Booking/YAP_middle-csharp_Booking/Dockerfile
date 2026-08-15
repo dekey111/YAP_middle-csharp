@@ -7,10 +7,8 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
-# 1. Контракты
 COPY ["YAP_middle_csharp.Contracts/YAP_middle_csharp.Contracts/YAP_middle_csharp.Contracts.csproj", "YAP_middle_csharp.Contracts/YAP_middle_csharp.Contracts/"]
 
-# 2. Проекты Booking
 COPY ["YAP_middle-csharp_Booking/YAP_middle-csharp_Booking/YAP_middle-csharp_Booking.csproj", "YAP_middle-csharp_Booking/YAP_middle-csharp_Booking/"]
 COPY ["YAP_middle-csharp_Booking/YAP_middle_csharp_Booking.Application/YAP_middle_csharp_Booking.Application.csproj", "YAP_middle-csharp_Booking/YAP_middle_csharp_Booking.Application/"]
 COPY ["YAP_middle-csharp_Booking/YAP_middle_csharp_Booking.Domain/YAP_middle_csharp_Booking.Domain.csproj", "YAP_middle-csharp_Booking/YAP_middle_csharp_Booking.Domain/"]
