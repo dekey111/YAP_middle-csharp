@@ -1,6 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Moq;
 using YAP_middle_csharp_Events.Application.Interfaces;
+using YAP_middle_csharp_Events.Application.Interfaces.ICache;
 using YAP_middle_csharp_Events.Application.Interfaces.IRepositories;
 using YAP_middle_csharp_Events.Application.Interfaces.IServices;
 using YAP_middle_csharp_Events.Application.Models;
@@ -19,11 +22,14 @@ namespace YAP_middle_csharp_Events.FuncTest
         private readonly AppDbContext _context;
         private readonly EventValidator _validator;
         private readonly ServiceProvider _serviceProvider;
+        private readonly Mock<ICacheService> _cacheServiceMock;
 
         public EventsServiceTests()
         {
             var dbName = Guid.NewGuid().ToString();
             var services = new ServiceCollection();
+
+            _cacheServiceMock = new Mock<ICacheService>();
 
             services.AddDbContext<AppDbContext>(options =>
                 options.UseInMemoryDatabase(dbName));
@@ -32,6 +38,7 @@ namespace YAP_middle_csharp_Events.FuncTest
 
             services.AddTransient<IValidator<EventModel>, EventValidator>();
             services.AddScoped<IEventRepository, EventRepository>();
+            services.AddSingleton(_cacheServiceMock.Object); 
             services.AddScoped<IEventService, EventService>();
 
             _serviceProvider = services.BuildServiceProvider();
@@ -233,6 +240,177 @@ namespace YAP_middle_csharp_Events.FuncTest
             Assert.NotEmpty(errors);
             Assert.Contains(errors, e => e.Contains("Дата окончания не может быть раньше даты начала"));
         }
+
+
+
+        [Fact]
+        public async Task FindById_RepositoryNotCall()
+        {
+            var eventId = Guid.NewGuid();
+            var cacheKey = $"event:{eventId}";
+            var dbEvent = new EventModel
+            {
+                Id = eventId,
+                Title = "Событие из базы",
+                Description = "Описание",
+                TotalSeats = 100,
+                AvailableSeats = 80,
+                StartAt = DateTime.UtcNow.AddDays(1),
+                EndAt = DateTime.UtcNow.AddDays(2)
+            };
+
+            var repositoryMock = new Mock<IEventRepository>();
+            var cacheServiceMock = new Mock<ICacheService>();
+
+            cacheServiceMock.Setup(x => x.GetAsync<EventUpdateRequest>(cacheKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((EventUpdateRequest?)null);
+
+            repositoryMock.Setup(x => x.FindByIdAsync(eventId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(dbEvent);
+
+            var service = new EventService(repositoryMock.Object, _validator, Mock.Of<ILogger<EventService>>(), cacheServiceMock.Object);
+
+            var result = await service.FindByIdAsync(eventId);
+
+            Assert.NotNull(result);
+            Assert.Equal("Событие из базы", result.Title);
+            repositoryMock.Verify(x => x.FindByIdAsync(eventId, It.IsAny<CancellationToken>()), Times.Once);
+            cacheServiceMock.Verify(x => x.SetAsync(cacheKey, It.Is<EventUpdateRequest>(dto => dto.Title == "Событие из базы"), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task FindTop10_WhenCacheHit()
+        {
+            const string cacheKey = "events:top10";
+            var cachedTop = new List<EventUpdateRequest>
+            {
+                new() { Title = "Топ-1", TotalSeats = 100 },
+                new() { Title = "Топ-2", TotalSeats = 50 }
+            };
+
+            var repositoryMock = new Mock<IEventRepository>();
+            var cacheServiceMock = new Mock<ICacheService>();
+
+            cacheServiceMock
+                .Setup(x => x.GetAsync<List<EventUpdateRequest>>(cacheKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(cachedTop);
+
+            var service = new EventService(
+                repositoryMock.Object,
+                _validator,
+                Mock.Of<ILogger<EventService>>(),
+                cacheServiceMock.Object);
+
+            // Act
+            var result = await service.FindTop10EventsAsync();
+
+            // Assert
+            Assert.Equal(2, result.Count);
+            repositoryMock.Verify(x => x.FindTop10EventsAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task FindTop10_WhenCacheMiss()
+        {
+            const string cacheKey = "events:top10";
+            var dbEvents = new List<EventModel>
+            {
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    Title = "Событие из БД",
+                    TotalSeats = 100,
+                    StartAt = DateTime.UtcNow.AddDays(1),
+                    EndAt = DateTime.UtcNow.AddDays(2)
+                }
+            };
+
+            var repositoryMock = new Mock<IEventRepository>();
+            var cacheServiceMock = new Mock<ICacheService>();
+
+            cacheServiceMock.Setup(x => x.GetAsync<List<EventUpdateRequest>>(cacheKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((List<EventUpdateRequest>?)null);
+
+            repositoryMock.Setup(x => x.FindTop10EventsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(dbEvents);
+
+            var service = new EventService(repositoryMock.Object, _validator,Mock.Of<ILogger<EventService>>(), cacheServiceMock.Object);
+
+            var result = await service.FindTop10EventsAsync();
+
+            Assert.Single(result);
+            repositoryMock.Verify(x => x.FindTop10EventsAsync(It.IsAny<CancellationToken>()), Times.Once);
+            cacheServiceMock.Verify(x => x.SetAsync(
+                cacheKey,
+                It.Is<List<EventUpdateRequest>>(list => list.Count == 1),
+                It.IsAny<TimeSpan>(),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_WhenSuccess()
+        {
+            var eventId = Guid.NewGuid();
+            var existingEvent = new EventModel
+            {
+                Id = eventId,
+                Title = "Старое название",
+                TotalSeats = 100,
+                StartAt = DateTime.UtcNow.AddDays(1),
+                EndAt = DateTime.UtcNow.AddDays(2)
+            };
+
+            var updateDto = new EventUpdateRequest
+            {
+                Title = "Новое название",
+                TotalSeats = 100,
+                StartAt = DateTime.UtcNow.AddDays(1),
+                EndAt = DateTime.UtcNow.AddDays(2)
+            };
+
+            var repositoryMock = new Mock<IEventRepository>();
+            var cacheServiceMock = new Mock<ICacheService>();
+
+            repositoryMock.Setup(x => x.FindByIdAsync(eventId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(existingEvent);
+
+            var service = new EventService(repositoryMock.Object, _validator, Mock.Of<ILogger<EventService>>(), cacheServiceMock.Object);
+
+            await service.UpdateAsync(eventId, updateDto);
+
+            repositoryMock.Verify(x => x.UpdateAsync(existingEvent, It.IsAny<CancellationToken>()), Times.Once);
+
+            cacheServiceMock.Verify(x => x.RemoveAsync($"event:{eventId}", It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task DeleteAsync_WhenSuccess()
+        {
+            var eventId = Guid.NewGuid();
+            var existingEvent = new EventModel
+            {
+                Id = eventId,
+                Title = "Удаляемое событие",
+                TotalSeats = 50,
+                StartAt = DateTime.UtcNow.AddDays(1),
+                EndAt = DateTime.UtcNow.AddDays(2)
+            };
+
+            var repositoryMock = new Mock<IEventRepository>();
+            var cacheServiceMock = new Mock<ICacheService>();
+
+            repositoryMock.Setup(x => x.FindByIdAsync(eventId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(existingEvent);
+
+            var service = new EventService(repositoryMock.Object, _validator, Mock.Of<ILogger<EventService>>(), cacheServiceMock.Object);
+
+            await service.DeleteAsync(eventId);
+
+            repositoryMock.Verify(x => x.DeleteAsync(existingEvent, It.IsAny<CancellationToken>()), Times.Once);
+
+            cacheServiceMock.Verify(x => x.RemoveAsync($"event:{eventId}", It.IsAny<CancellationToken>()), Times.Once);
+        }
+
     }
 
 }
