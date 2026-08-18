@@ -157,6 +157,7 @@ namespace YAP_middle_csharp_Events.Application.Services
 
             await _repository.CreateAsync(eventModel, cancellationToken);
             _logger.LogInformation("[EventService] [Create] Создано Event ID: {Id}", eventModel.Id);
+            await _cacheService.RemoveAsync(CacheKeysHelper.TopEvents(), cancellationToken);
             return eventModel.Id;
         }
 
