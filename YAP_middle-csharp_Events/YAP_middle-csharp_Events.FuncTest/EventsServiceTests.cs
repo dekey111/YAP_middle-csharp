@@ -43,7 +43,7 @@ namespace YAP_middle_csharp_Events.FuncTest
 
             services.AddTransient<IValidator<EventModel>, EventValidator>();
             services.AddScoped<IEventRepository, EventRepository>();
-            services.AddSingleton(_cacheServiceMock.Object); 
+            services.AddSingleton(_cacheServiceMock.Object);
             services.AddScoped<IEventService, EventService>();
 
             _serviceProvider = services.BuildServiceProvider();
@@ -89,7 +89,7 @@ namespace YAP_middle_csharp_Events.FuncTest
                 StartAt = DateTime.UtcNow,
                 EndAt = DateTime.UtcNow.AddDays(1)
             };
-            var newEventId= await _eventService.CreateAsync(newEvent);
+            var newEventId = await _eventService.CreateAsync(newEvent);
             _context.ChangeTracker.Clear();
 
             var eventToUpdate = new EventUpdateRequest
@@ -219,7 +219,7 @@ namespace YAP_middle_csharp_Events.FuncTest
                 StartAt = DateTime.UtcNow,
                 EndAt = DateTime.UtcNow
             };
-            var ex = await Assert.ThrowsAsync<NotFoundExceptionApp>(() =>  _eventService.UpdateAsync(Guid.NewGuid(), newEvent));
+            var ex = await Assert.ThrowsAsync<NotFoundExceptionApp>(() => _eventService.UpdateAsync(Guid.NewGuid(), newEvent));
             Assert.Equal("Event не найден!", ex.Message);
         }
 
@@ -268,7 +268,7 @@ namespace YAP_middle_csharp_Events.FuncTest
             cacheServiceMock.Setup(x => x.GetAsync<EventContract>(cacheKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((EventContract?)null);
 
-            repositoryMock .Setup(x => x.FindByIdAsync(eventId, It.IsAny<CancellationToken>()))
+            repositoryMock.Setup(x => x.FindByIdAsync(eventId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(dbEvent);
 
             var options = Options.Create(new EventCacheOptions());
@@ -361,7 +361,7 @@ namespace YAP_middle_csharp_Events.FuncTest
                 });
 
             var options = Options.Create(new EventCacheOptions());
-            var service = new EventService(repositoryMock.Object,_validator, Mock.Of<ILogger<EventService>>(),  cacheServiceMock.Object, options);
+            var service = new EventService(repositoryMock.Object, _validator, Mock.Of<ILogger<EventService>>(), cacheServiceMock.Object, options);
             var tasks = Enumerable.Range(0, 10).Select(_ => service.FindTop10EventsAsync());
             var results = await Task.WhenAll(tasks);
 

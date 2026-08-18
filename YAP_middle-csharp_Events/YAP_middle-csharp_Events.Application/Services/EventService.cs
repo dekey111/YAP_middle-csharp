@@ -16,7 +16,7 @@ using YAP_middle_csharp_Events.Domain.Models;
 
 namespace YAP_middle_csharp_Events.Application.Services
 {
-    public class EventService(IEventRepository repository, IValidator<EventModel> validator,ILogger<EventService> logger,
+    public class EventService(IEventRepository repository, IValidator<EventModel> validator, ILogger<EventService> logger,
         ICacheService cacheService, IOptions<EventCacheOptions> cacheOptions) : IEventService
     {
         private readonly IEventRepository _repository = repository;
