@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using YAP_middle_csharp.Contracts.EventModels;
+using YAP_middle_csharp_Events.Application.Helper;
 using YAP_middle_csharp_Events.Application.Interfaces;
 using YAP_middle_csharp_Events.Application.Interfaces.ICache;
 using YAP_middle_csharp_Events.Application.Interfaces.IRepositories;
@@ -32,7 +33,7 @@ namespace YAP_middle_csharp_Events.Application.Services
         /// <param name="pageSize">Опциональное поле для выбора количества выгружаемых строк, со значением по умолчанию = 10</param>
         /// <returns>Возвращается EventResponse </returns>
         /// <exception cref="ValidationExceptionApp">Выбрасывается, если параметры пагинации вне допустимого диапазона</exception>
-        public async Task<PaginatedResult<EventUpdateRequest>> FindAllAsync(string? title = null, DateTime? from = null, DateTime? to = null,
+        public async Task<PaginatedResult<EventContract>> FindAllAsync(string? title = null, DateTime? from = null, DateTime? to = null,
             int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
         {
             _logger.LogDebug("[EventService] [FindAll] Начало выполнения FindAll: title={Title}, from={From}, to={To}, page={Page}, pSize={pSize}",
@@ -53,8 +54,9 @@ namespace YAP_middle_csharp_Events.Application.Services
             var result = await _repository.GetPagedAsync(title, from, to, page, pageSize, cancellationToken);
 
             _logger.LogInformation("[EventService] [FindAll] Выполнен FindAll. Получено строк: {TotalCount}", result.TotalCount);
-            var itemsResponse = result.Items.Select(x => new EventUpdateRequest(x)).ToList();
-            return new PaginatedResult<EventUpdateRequest>
+
+            var itemsResponse = result.Items.Select(x => x.MapToContract()).ToList();
+            return new PaginatedResult<EventContract>
             {
                 Items = itemsResponse,
                 TotalCount = result.TotalCount,
@@ -69,11 +71,11 @@ namespace YAP_middle_csharp_Events.Application.Services
         /// <param name="id">Уникальный идентификатор события</param>
         /// <returns>Возвращает экземпляр EventModel</returns>
         /// <exception cref="NotFoundExceptionApp">В случае если событие не найдено</exception>
-        public async Task<EventUpdateRequest> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<EventContract> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             string cacheKey = $"event:{id}";
 
-            var cachedEvent = await _cacheService.GetAsync<EventUpdateRequest>(cacheKey, cancellationToken);
+            var cachedEvent = await _cacheService.GetAsync<EventContract>(cacheKey, cancellationToken);
             if (cachedEvent is not null)
             {
                 _logger.LogDebug("[EventService] [FindByIdAsync] Найдено событие в кеше: {Id}", id);
@@ -87,7 +89,7 @@ namespace YAP_middle_csharp_Events.Application.Services
                 throw new NotFoundExceptionApp($"Event ID: {id} не найден!");
             }
 
-            var responseDto = new EventUpdateRequest(findEvent);
+            var responseDto = findEvent.MapToContract();
             await _cacheService.SetAsync(cacheKey, responseDto, _defaultExpiry, cancellationToken);
             _logger.LogDebug("[EventService] [FindByIdAsync] Нашли данные в БД, записали в Кеш и вернули пользователю");
             return responseDto;
@@ -99,11 +101,11 @@ namespace YAP_middle_csharp_Events.Application.Services
         /// </summary>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public async Task<IReadOnlyList<EventUpdateRequest>> FindTop10EventsAsync(CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<EventContract>> FindTop10EventsAsync(CancellationToken cancellationToken = default)
         {
             const string cacheKey = "events:top10";
 
-            var findCache = await _cacheService.GetAsync<List<EventUpdateRequest>>(cacheKey, cancellationToken);
+            var findCache = await _cacheService.GetAsync<List<EventContract>>(cacheKey, cancellationToken);
             if (findCache is not null)
             {
                 _logger.LogDebug("[EventService] [FindTop10EventsAsync] нашли данные в кеше");
@@ -111,7 +113,7 @@ namespace YAP_middle_csharp_Events.Application.Services
             }
 
             var findTop10Db = await _repository.FindTop10EventsAsync(cancellationToken);
-            var resultDtos = findTop10Db.Select(x => new EventUpdateRequest(x)).ToList();
+            var resultDtos = findTop10Db.Select(x => x.MapToContract()).ToList();
             await _cacheService.SetAsync(cacheKey, resultDtos, _defaultExpiry, cancellationToken);
             _logger.LogDebug("[EventService] [FindTop10EventsAsync] Нашли данные в БД, записали в Кеш и вернули пользователю");
 
