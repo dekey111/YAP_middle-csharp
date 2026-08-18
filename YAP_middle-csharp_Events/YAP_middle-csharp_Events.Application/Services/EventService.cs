@@ -75,7 +75,7 @@ namespace YAP_middle_csharp_Events.Application.Services
         /// <exception cref="NotFoundExceptionApp">В случае если событие не найдено</exception>
         public async Task<EventContract> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            string cacheKey = $"event:{id}";
+            string cacheKey = CacheKeysHelper.Event(id);
 
             var cachedEvent = await _cacheService.GetAsync<EventContract>(cacheKey, cancellationToken);
             if (cachedEvent is not null)
@@ -105,7 +105,7 @@ namespace YAP_middle_csharp_Events.Application.Services
         /// <returns></returns>
         public async Task<IReadOnlyList<EventContract>> FindTop10EventsAsync(CancellationToken cancellationToken = default)
         {
-            const string cacheKey = "events:top10";
+            string cacheKey = CacheKeysHelper.TopEvents();
 
             var findCache = await _cacheService.GetAsync<List<EventContract>>(cacheKey, cancellationToken);
             if (findCache is not null)

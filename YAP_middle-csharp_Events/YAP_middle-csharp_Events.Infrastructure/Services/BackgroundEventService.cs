@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Text.Json;
 using YAP_middle_csharp.Contracts.BookingModel;
 using YAP_middle_csharp.Contracts.EventModels;
+using YAP_middle_csharp_Events.Application.Helper;
 using YAP_middle_csharp_Events.Application.Interfaces.ICache;
 using YAP_middle_csharp_Events.Application.Interfaces.IRepositories;
 using YAP_middle_csharp_Events.Domain.Models;
@@ -136,8 +137,8 @@ namespace YAP_middle_csharp_Events.Infrastructure.Services
                     await dbContext.SaveChangesAsync(cancellationToken);
                     await transaction.CommitAsync(cancellationToken);
 
-                    string eventName = $"event:{bookingConfirmedEvent.EventId}";
-                    await cacheService.RemoveAsync(eventName, cancellationToken);
+                    string cacheKey = CacheKeysHelper.Event(bookingConfirmedEvent.EventId);
+                    await cacheService.RemoveAsync(cacheKey, cancellationToken);
 
                     _logger.LogInformation("[BackgroundEventService] Успешно списано {Seats} мест для события {EventId}. Осталось: {Remaining}",
                         bookingConfirmedEvent.SeatsCount, bookingConfirmedEvent.EventId, eventModel.AvailableSeats);
