@@ -168,5 +168,63 @@ namespace YAP_middle_csharp_Events.IntegrationTests
             var deletedEvent = await _context.Events.FindAsync(testEvent.Id);
             Assert.Null(deletedEvent);
         }
+
+
+        [Fact]
+        public async Task FindTop10EventsAsync_ShouldSortBySoldSeatsPercentageDescending()
+        {
+            var event90Percent = new EventModel
+            {
+                Id = Guid.NewGuid(),
+                Title = "Популярное (90%)",
+                TotalSeats = 100,
+                AvailableSeats = 10,
+                StartAt = DateTime.UtcNow.AddDays(1),
+                EndAt = DateTime.UtcNow.AddDays(2)
+            };
+
+            var event50Percent = new EventModel
+            {
+                Id = Guid.NewGuid(),
+                Title = "Среднее (50%)",
+                TotalSeats = 100,
+                AvailableSeats = 50,
+                StartAt = DateTime.UtcNow.AddDays(1),
+                EndAt = DateTime.UtcNow.AddDays(2)
+            };
+
+            var event10Percent = new EventModel
+            {
+                Id = Guid.NewGuid(),
+                Title = "Малопопулярное (10%)",
+                TotalSeats = 100,
+                AvailableSeats = 90,
+                StartAt = DateTime.UtcNow.AddDays(1),
+                EndAt = DateTime.UtcNow.AddDays(2)
+            };
+
+            var event100Percent = new EventModel
+            {
+                Id = Guid.NewGuid(),
+                Title = "Sold Out (100%)",
+                TotalSeats = 100,
+                AvailableSeats = 0,
+                StartAt = DateTime.UtcNow.AddDays(1),
+                EndAt = DateTime.UtcNow.AddDays(2)
+            };
+
+            await _context.Events.AddRangeAsync(event10Percent, event90Percent, event50Percent, event100Percent);
+            await _context.SaveChangesAsync();
+
+            var result = await _repository.FindTop10EventsAsync();
+
+            Assert.NotNull(result);
+            Assert.Equal(4, result.Count);
+
+            Assert.Equal("Sold Out (100%)", result[0].Title);
+            Assert.Equal("Популярное (90%)", result[1].Title);
+            Assert.Equal("Среднее (50%)", result[2].Title);
+            Assert.Equal("Малопопулярное (10%)", result[3].Title);
+        }
     }
 }

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
+using YAP_middle_csharp.Contracts.EventModels;
 using YAP_middle_csharp_Events.Application.Interfaces;
 using YAP_middle_csharp_Events.Application.Interfaces.ICache;
 using YAP_middle_csharp_Events.Application.Interfaces.IRepositories;
@@ -262,8 +263,8 @@ namespace YAP_middle_csharp_Events.FuncTest
             var repositoryMock = new Mock<IEventRepository>();
             var cacheServiceMock = new Mock<ICacheService>();
 
-            cacheServiceMock.Setup(x => x.GetAsync<EventUpdateRequest>(cacheKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((EventUpdateRequest?)null);
+            cacheServiceMock.Setup(x => x.GetAsync<EventContract>(cacheKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((EventContract?)null);
 
             repositoryMock.Setup(x => x.FindByIdAsync(eventId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(dbEvent);
@@ -275,36 +276,30 @@ namespace YAP_middle_csharp_Events.FuncTest
             Assert.NotNull(result);
             Assert.Equal("Событие из базы", result.Title);
             repositoryMock.Verify(x => x.FindByIdAsync(eventId, It.IsAny<CancellationToken>()), Times.Once);
-            cacheServiceMock.Verify(x => x.SetAsync(cacheKey, It.Is<EventUpdateRequest>(dto => dto.Title == "Событие из базы"), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()), Times.Once);
+            cacheServiceMock.Verify(x => x.SetAsync(cacheKey, It.Is<EventContract>(dto => dto.Title == "Событие из базы"), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task FindTop10_WhenCacheHit()
         {
             const string cacheKey = "events:top10";
-            var cachedTop = new List<EventUpdateRequest>
+            var cachedTop = new List<EventContract>
             {
-                new() { Title = "Топ-1", TotalSeats = 100 },
-                new() { Title = "Топ-2", TotalSeats = 50 }
+                new() { Id = Guid.NewGuid(), Title = "Топ-1", AvailableSeats = 10 },
+                new() { Id = Guid.NewGuid(), Title = "Топ-2", AvailableSeats = 20 }
             };
 
             var repositoryMock = new Mock<IEventRepository>();
             var cacheServiceMock = new Mock<ICacheService>();
 
             cacheServiceMock
-                .Setup(x => x.GetAsync<List<EventUpdateRequest>>(cacheKey, It.IsAny<CancellationToken>()))
+                .Setup(x => x.GetAsync<List<EventContract>>(cacheKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(cachedTop);
 
-            var service = new EventService(
-                repositoryMock.Object,
-                _validator,
-                Mock.Of<ILogger<EventService>>(),
-                cacheServiceMock.Object);
+            var service = new EventService(repositoryMock.Object, _validator, Mock.Of<ILogger<EventService>>(), cacheServiceMock.Object);
 
-            // Act
             var result = await service.FindTop10EventsAsync();
 
-            // Assert
             Assert.Equal(2, result.Count);
             repositoryMock.Verify(x => x.FindTop10EventsAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -320,6 +315,7 @@ namespace YAP_middle_csharp_Events.FuncTest
                     Id = Guid.NewGuid(),
                     Title = "Событие из БД",
                     TotalSeats = 100,
+                    AvailableSeats = 50,
                     StartAt = DateTime.UtcNow.AddDays(1),
                     EndAt = DateTime.UtcNow.AddDays(2)
                 }
@@ -328,21 +324,19 @@ namespace YAP_middle_csharp_Events.FuncTest
             var repositoryMock = new Mock<IEventRepository>();
             var cacheServiceMock = new Mock<ICacheService>();
 
-            cacheServiceMock.Setup(x => x.GetAsync<List<EventUpdateRequest>>(cacheKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((List<EventUpdateRequest>?)null);
+            cacheServiceMock.Setup(x => x.GetAsync<List<EventContract>>(cacheKey, It.IsAny<CancellationToken>())).ReturnsAsync((List<EventContract>?)null);
 
-            repositoryMock.Setup(x => x.FindTop10EventsAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(dbEvents);
+            repositoryMock.Setup(x => x.FindTop10EventsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(dbEvents);
 
-            var service = new EventService(repositoryMock.Object, _validator,Mock.Of<ILogger<EventService>>(), cacheServiceMock.Object);
+            var service = new EventService(repositoryMock.Object, _validator, Mock.Of<ILogger<EventService>>(), cacheServiceMock.Object);
 
             var result = await service.FindTop10EventsAsync();
 
             Assert.Single(result);
+            Assert.Equal("Событие из БД", result[0].Title);
             repositoryMock.Verify(x => x.FindTop10EventsAsync(It.IsAny<CancellationToken>()), Times.Once);
-            cacheServiceMock.Verify(x => x.SetAsync(
-                cacheKey,
-                It.Is<List<EventUpdateRequest>>(list => list.Count == 1),
+            cacheServiceMock.Verify(x => x.SetAsync(cacheKey,
+                It.Is<List<EventContract>>(list => list.Count == 1),
                 It.IsAny<TimeSpan>(),
                 It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -410,7 +404,6 @@ namespace YAP_middle_csharp_Events.FuncTest
 
             cacheServiceMock.Verify(x => x.RemoveAsync($"event:{eventId}", It.IsAny<CancellationToken>()), Times.Once);
         }
-
     }
 
 }

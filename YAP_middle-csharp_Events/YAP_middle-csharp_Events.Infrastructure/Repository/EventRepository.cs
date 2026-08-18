@@ -78,7 +78,7 @@ namespace YAP_middle_csharp_Events.Infrastructure.Repository
             return await _context.Events
                 .AsNoTracking()
                 .Where(x => x.TotalSeats > 0)
-                .OrderByDescending(x => (x.TotalSeats - x.AvailableSeats) / x.TotalSeats)
+                .OrderByDescending(x => (double)(x.TotalSeats - x.AvailableSeats) / x.TotalSeats)
                 .Take(10)
                 .ToListAsync(cancellationToken);
         }
