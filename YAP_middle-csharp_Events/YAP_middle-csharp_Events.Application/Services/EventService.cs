@@ -175,7 +175,7 @@ namespace YAP_middle_csharp_Events.Application.Services
                 throw new ValidationExceptionApp("Данные для обновления не могут быть пустыми");
             }
 
-            var findEvent = await _repository.FindByIdAsync(id);
+            var findEvent = await _repository.FindByIdAsync(id, cancellationToken);
             if (findEvent is null)
             {
                 _logger.LogError("[EventService] [Update] Event ID: {id} не найдено!", id);

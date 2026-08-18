@@ -90,8 +90,8 @@ namespace YAP_middle_csharp_Events.Infrastructure.Repository
         /// <returns>Сущность события</returns>
         public async Task CreateAsync(EventModel item, CancellationToken cancellationToken = default)
         {
-            _context.Events.Add(item);
-            await _context.SaveChangesAsync();
+            await _context.Events.AddAsync(item, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         /// <summary>
@@ -102,7 +102,7 @@ namespace YAP_middle_csharp_Events.Infrastructure.Repository
         public async Task UpdateAsync(EventModel item, CancellationToken cancellationToken = default)
         {
             _context.Events.Update(item);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         /// <summary>
@@ -113,7 +113,7 @@ namespace YAP_middle_csharp_Events.Infrastructure.Repository
         public async Task DeleteAsync(EventModel item, CancellationToken cancellationToken = default)
         {
             _context.Events.Remove(item);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
     }
 }
