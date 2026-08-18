@@ -7,6 +7,7 @@ using StackExchange.Redis;
 using System.Diagnostics;
 using System.Text;
 using YAP_middle_csharp_Events.Application;
+using YAP_middle_csharp_Events.Application.Options;
 using YAP_middle_csharp_Events.Infrastructure;
 using YAP_middle_csharp_Events.Infrastructure.DataAccess;
 using YAP_middle_csharp_Events.Middleware;
@@ -27,6 +28,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     return ConnectionMultiplexer.Connect(configuration);
 });
 
+builder.Services.Configure<EventCacheOptions>(builder.Configuration.GetSection(EventCacheOptions.SectionName));
 builder.Services.AddInfrastructure(connectionString);
 builder.Services.AddApplication();
 

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -9,19 +10,20 @@ using YAP_middle_csharp_Events.Application.Interfaces.ICache;
 using YAP_middle_csharp_Events.Application.Interfaces.IRepositories;
 using YAP_middle_csharp_Events.Application.Interfaces.IServices;
 using YAP_middle_csharp_Events.Application.Models;
+using YAP_middle_csharp_Events.Application.Options;
 using YAP_middle_csharp_Events.Domain.Exceptions;
 using YAP_middle_csharp_Events.Domain.Models;
 
 namespace YAP_middle_csharp_Events.Application.Services
 {
-    public class EventService(IEventRepository repository, IValidator<EventModel> validator, ILogger<EventService> logger, ICacheService cacheService) : IEventService
+    public class EventService(IEventRepository repository, IValidator<EventModel> validator,ILogger<EventService> logger,
+        ICacheService cacheService, IOptions<EventCacheOptions> cacheOptions) : IEventService
     {
         private readonly IEventRepository _repository = repository;
         private readonly IValidator<EventModel> _validator = validator;
         private readonly ILogger<EventService> _logger = logger;
         private readonly ICacheService _cacheService = cacheService;
-
-        private static readonly TimeSpan _defaultExpiry = TimeSpan.FromMinutes(10);
+        private readonly EventCacheOptions _cacheOptions = cacheOptions.Value;
 
         /// <summary>
         /// Метод для поиска всех Событий с опциональными фильтрами 
@@ -90,7 +92,7 @@ namespace YAP_middle_csharp_Events.Application.Services
             }
 
             var responseDto = findEvent.MapToContract();
-            await _cacheService.SetAsync(cacheKey, responseDto, _defaultExpiry, cancellationToken);
+            await _cacheService.SetAsync(cacheKey, responseDto, _cacheOptions.DefaultTTL, cancellationToken);
             _logger.LogDebug("[EventService] [FindByIdAsync] Нашли данные в БД, записали в Кеш и вернули пользователю");
             return responseDto;
         }
@@ -114,7 +116,7 @@ namespace YAP_middle_csharp_Events.Application.Services
 
             var findTop10Db = await _repository.FindTop10EventsAsync(cancellationToken);
             var resultDtos = findTop10Db.Select(x => x.MapToContract()).ToList();
-            await _cacheService.SetAsync(cacheKey, resultDtos, _defaultExpiry, cancellationToken);
+            await _cacheService.SetAsync(cacheKey, resultDtos, _cacheOptions.Top10EventsTtl, cancellationToken);
             _logger.LogDebug("[EventService] [FindTop10EventsAsync] Нашли данные в БД, записали в Кеш и вернули пользователю");
 
             return resultDtos;

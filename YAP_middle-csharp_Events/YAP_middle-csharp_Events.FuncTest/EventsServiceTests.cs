@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using YAP_middle_csharp.Contracts.EventModels;
 using YAP_middle_csharp_Events.Application.Interfaces;
@@ -8,6 +9,7 @@ using YAP_middle_csharp_Events.Application.Interfaces.ICache;
 using YAP_middle_csharp_Events.Application.Interfaces.IRepositories;
 using YAP_middle_csharp_Events.Application.Interfaces.IServices;
 using YAP_middle_csharp_Events.Application.Models;
+using YAP_middle_csharp_Events.Application.Options;
 using YAP_middle_csharp_Events.Application.Services;
 using YAP_middle_csharp_Events.Application.Validator;
 using YAP_middle_csharp_Events.Domain.Exceptions;
@@ -24,6 +26,7 @@ namespace YAP_middle_csharp_Events.FuncTest
         private readonly EventValidator _validator;
         private readonly ServiceProvider _serviceProvider;
         private readonly Mock<ICacheService> _cacheServiceMock;
+
 
         public EventsServiceTests()
         {
@@ -242,8 +245,6 @@ namespace YAP_middle_csharp_Events.FuncTest
             Assert.Contains(errors, e => e.Contains("Дата окончания не может быть раньше даты начала"));
         }
 
-
-
         [Fact]
         public async Task FindById_RepositoryNotCall()
         {
@@ -269,7 +270,8 @@ namespace YAP_middle_csharp_Events.FuncTest
             repositoryMock.Setup(x => x.FindByIdAsync(eventId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(dbEvent);
 
-            var service = new EventService(repositoryMock.Object, _validator, Mock.Of<ILogger<EventService>>(), cacheServiceMock.Object);
+            var options = Options.Create(new EventCacheOptions { DefaultTTL = TimeSpan.FromMinutes(10),Top10EventsTtl = TimeSpan.FromMinutes(2) });
+            var service = new EventService(repositoryMock.Object, _validator, Mock.Of<ILogger<EventService>>(), cacheServiceMock.Object, options);
 
             var result = await service.FindByIdAsync(eventId);
 
@@ -296,7 +298,8 @@ namespace YAP_middle_csharp_Events.FuncTest
                 .Setup(x => x.GetAsync<List<EventContract>>(cacheKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(cachedTop);
 
-            var service = new EventService(repositoryMock.Object, _validator, Mock.Of<ILogger<EventService>>(), cacheServiceMock.Object);
+            var options = Options.Create(new EventCacheOptions { DefaultTTL = TimeSpan.FromMinutes(10), Top10EventsTtl = TimeSpan.FromMinutes(2) });
+            var service = new EventService(repositoryMock.Object, _validator, Mock.Of<ILogger<EventService>>(), cacheServiceMock.Object, options);
 
             var result = await service.FindTop10EventsAsync();
 
@@ -328,7 +331,8 @@ namespace YAP_middle_csharp_Events.FuncTest
 
             repositoryMock.Setup(x => x.FindTop10EventsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(dbEvents);
 
-            var service = new EventService(repositoryMock.Object, _validator, Mock.Of<ILogger<EventService>>(), cacheServiceMock.Object);
+            var options = Options.Create(new EventCacheOptions { DefaultTTL = TimeSpan.FromMinutes(10), Top10EventsTtl = TimeSpan.FromMinutes(2) });
+            var service = new EventService(repositoryMock.Object, _validator, Mock.Of<ILogger<EventService>>(), cacheServiceMock.Object, options);
 
             var result = await service.FindTop10EventsAsync();
 
@@ -368,7 +372,8 @@ namespace YAP_middle_csharp_Events.FuncTest
             repositoryMock.Setup(x => x.FindByIdAsync(eventId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(existingEvent);
 
-            var service = new EventService(repositoryMock.Object, _validator, Mock.Of<ILogger<EventService>>(), cacheServiceMock.Object);
+            var options = Options.Create(new EventCacheOptions { DefaultTTL = TimeSpan.FromMinutes(10), Top10EventsTtl = TimeSpan.FromMinutes(2) });
+            var service = new EventService(repositoryMock.Object, _validator, Mock.Of<ILogger<EventService>>(), cacheServiceMock.Object, options);
 
             await service.UpdateAsync(eventId, updateDto);
 
@@ -396,7 +401,8 @@ namespace YAP_middle_csharp_Events.FuncTest
             repositoryMock.Setup(x => x.FindByIdAsync(eventId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(existingEvent);
 
-            var service = new EventService(repositoryMock.Object, _validator, Mock.Of<ILogger<EventService>>(), cacheServiceMock.Object);
+            var options = Options.Create(new EventCacheOptions { DefaultTTL = TimeSpan.FromMinutes(10), Top10EventsTtl = TimeSpan.FromMinutes(2) });
+            var service = new EventService(repositoryMock.Object, _validator, Mock.Of<ILogger<EventService>>(), cacheServiceMock.Object, options);
 
             await service.DeleteAsync(eventId);
 
@@ -405,5 +411,4 @@ namespace YAP_middle_csharp_Events.FuncTest
             cacheServiceMock.Verify(x => x.RemoveAsync($"event:{eventId}", It.IsAny<CancellationToken>()), Times.Once);
         }
     }
-
 }
