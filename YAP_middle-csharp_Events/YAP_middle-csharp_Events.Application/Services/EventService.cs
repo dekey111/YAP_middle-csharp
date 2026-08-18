@@ -157,7 +157,6 @@ namespace YAP_middle_csharp_Events.Application.Services
 
             await _repository.CreateAsync(eventModel, cancellationToken);
             _logger.LogInformation("[EventService] [Create] Создано Event ID: {Id}", eventModel.Id);
-
             return eventModel.Id;
         }
 
@@ -195,7 +194,7 @@ namespace YAP_middle_csharp_Events.Application.Services
             }
 
             await _repository.UpdateAsync(findEvent, cancellationToken);
-            await _cacheService.RemoveAsync($"event:{id}", cancellationToken);
+            await _cacheService.RemoveAsync(CacheKeysHelper.Event(id), cancellationToken);
             _logger.LogInformation("[EventService] [Update] Event ID: {Id}, успешно обновлён", findEvent.Id);
 
             return new EventUpdateRequest(findEvent);
@@ -220,7 +219,7 @@ namespace YAP_middle_csharp_Events.Application.Services
             }
 
             await _repository.DeleteAsync(findEvent);
-            await _cacheService.RemoveAsync($"event:{id}", cancellationToken);
+            await _cacheService.RemoveAsync(CacheKeysHelper.Event(id), cancellationToken);
             _logger.LogInformation("[EventService] [Delete] Event ID: {Id}, успешно удалён!", id);
         }
     }
