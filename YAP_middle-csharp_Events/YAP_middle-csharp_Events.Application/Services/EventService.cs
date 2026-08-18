@@ -25,6 +25,7 @@ namespace YAP_middle_csharp_Events.Application.Services
         private readonly ICacheService _cacheService = cacheService;
         private readonly EventCacheOptions _cacheOptions = cacheOptions.Value;
 
+        private static readonly SemaphoreSlim _top10Lock = new(1, 1);
         /// <summary>
         /// Метод для поиска всех Событий с опциональными фильтрами 
         /// </summary>
@@ -114,12 +115,27 @@ namespace YAP_middle_csharp_Events.Application.Services
                 return findCache;
             }
 
-            var findTop10Db = await _repository.FindTop10EventsAsync(cancellationToken);
-            var resultDtos = findTop10Db.Select(x => x.MapToContract()).ToList();
-            await _cacheService.SetAsync(cacheKey, resultDtos, _cacheOptions.Top10EventsTtl, cancellationToken);
-            _logger.LogDebug("[EventService] [FindTop10EventsAsync] Нашли данные в БД, записали в Кеш и вернули пользователю");
+            await _top10Lock.WaitAsync(cancellationToken);
+            try
+            {
+                findCache = await _cacheService.GetAsync<List<EventContract>>(cacheKey, cancellationToken);
+                if (findCache is not null)
+                {
+                    _logger.LogDebug("[EventService] [FindTop10EventsAsync] нашли данные в кеше");
+                    return findCache;
+                }
 
-            return resultDtos;
+                var findTop10Db = await _repository.FindTop10EventsAsync(cancellationToken);
+                var resultDtos = findTop10Db.Select(x => x.MapToContract()).ToList();
+                await _cacheService.SetAsync(cacheKey, resultDtos, _cacheOptions.Top10EventsTtl, cancellationToken);
+                _logger.LogDebug("[EventService] [FindTop10EventsAsync] Нашли данные в БД, записали в Кеш и вернули пользователю");
+
+                return resultDtos;
+            }
+            finally
+            {
+                _top10Lock.Release();
+            }
         }
 
         /// <summary>
