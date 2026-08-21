@@ -3,9 +3,11 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using StackExchange.Redis;
 using System.Diagnostics;
 using System.Text;
 using YAP_middle_csharp_Events.Application;
+using YAP_middle_csharp_Events.Application.Options;
 using YAP_middle_csharp_Events.Infrastructure;
 using YAP_middle_csharp_Events.Infrastructure.DataAccess;
 using YAP_middle_csharp_Events.Middleware;
@@ -13,8 +15,20 @@ using YAP_middle_csharp_Events.Middleware;
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+    ?? throw new InvalidOperationException("Connection string 'DataBase' not found.");
 
+var redisConnectionString = builder.Configuration.GetConnectionString("Redis")
+    ?? throw new InvalidOperationException("Connection string 'Redis' not found");
+
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+{
+    var configuration = ConfigurationOptions.Parse(redisConnectionString, true);
+    configuration.AbortOnConnectFail = false;
+    return ConnectionMultiplexer.Connect(configuration);
+});
+
+builder.Services.Configure<EventCacheOptions>(builder.Configuration.GetSection(EventCacheOptions.SectionName));
 builder.Services.AddInfrastructure(connectionString);
 builder.Services.AddApplication();
 
@@ -56,6 +70,8 @@ builder.Services.AddProblemDetails(options =>
 
 var jwtOptions = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtOptions["SecretKey"] ?? throw new InvalidOperationException("SecretKey not found");
+var issuer = jwtOptions["Issuer"] ?? throw new InvalidOperationException("Issuer not found");
+var audience = jwtOptions["Audience"] ?? throw new InvalidOperationException("Audience not found");
 
 builder.Services.AddAuthentication(options =>
 {
@@ -67,10 +83,10 @@ builder.Services.AddAuthentication(options =>
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
-        ValidIssuer = jwtOptions["Issuer"],
+        ValidIssuer = issuer,
 
         ValidateAudience = true,
-        ValidAudience = jwtOptions["Audience"],
+        ValidAudience = audience,
 
         ValidateLifetime = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),

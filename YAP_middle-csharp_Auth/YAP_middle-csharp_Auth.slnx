@@ -2,6 +2,8 @@
   <Project Path="../YAP_middle_csharp.Contracts/YAP_middle_csharp.Contracts/YAP_middle_csharp.Contracts.csproj" />
   <Project Path="YAP_middle-csharp_Auth.Application/YAP_middle-csharp_Auth.Application.csproj" />
   <Project Path="YAP_middle-csharp_Auth.Domain/YAP_middle-csharp_Auth.Domain.csproj" Id="e35ed8e0-8f66-4ddd-b706-61c0efd18fe6" />
+  <Project Path="YAP_middle-csharp_Auth.FuncTest/YAP_middle-csharp_Auth.FuncTest.csproj" Id="50644d4d-b302-4ae5-a384-d3f1cc4078b3" />
   <Project Path="YAP_middle-csharp_Auth.Infrastructure/YAP_middle-csharp_Auth.Infrastructure.csproj" Id="e68d0c57-b7c1-477b-a7a3-fef4a69c5742" />
+  <Project Path="YAP_middle-csharp_Auth.IntegrationTests/YAP_middle-csharp_Auth.IntegrationTests.csproj" Id="1f8931b9-d8e0-4158-b395-5fe79c13009f" />
   <Project Path="YAP_middle-csharp_Auth/YAP_middle-csharp_Auth.csproj" />
 </Solution>

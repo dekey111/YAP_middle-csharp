@@ -7,11 +7,10 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
-# Копируем проекты слоя Auth
 COPY ["YAP_middle-csharp_Auth/YAP_middle-csharp_Auth/YAP_middle-csharp_Auth.csproj", "YAP_middle-csharp_Auth/YAP_middle-csharp_Auth/"]
 COPY ["YAP_middle-csharp_Auth/YAP_middle-csharp_Auth.Domain/YAP_middle-csharp_Auth.Domain.csproj", "YAP_middle-csharp_Auth/YAP_middle-csharp_Auth.Domain/"]
 COPY ["YAP_middle-csharp_Auth/YAP_middle-csharp_Auth.Infrastructure/YAP_middle-csharp_Auth.Infrastructure.csproj", "YAP_middle-csharp_Auth/YAP_middle-csharp_Auth.Infrastructure/"]
-COPY ["YAP_middle-csharp_Auth/YAP_middle-csharp_Auth_Application/YAP_middle-csharp_Auth.Application.csproj", "YAP_middle-csharp_Auth/YAP_middle-csharp_Auth_Application/"]
+COPY ["YAP_middle-csharp_Auth/YAP_middle-csharp_Auth.Application/YAP_middle-csharp_Auth.Application.csproj", "YAP_middle-csharp_Auth/YAP_middle-csharp_Auth_Application/"]
 
 RUN dotnet restore "YAP_middle-csharp_Auth/YAP_middle-csharp_Auth/YAP_middle-csharp_Auth.csproj"
 

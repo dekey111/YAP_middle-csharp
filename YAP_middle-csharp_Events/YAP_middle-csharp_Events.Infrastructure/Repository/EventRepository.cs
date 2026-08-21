@@ -22,7 +22,7 @@ namespace YAP_middle_csharp_Events.Infrastructure.Repository
         /// <param name="page">Опциональное поле для выбора страницы, со значением по умолчанию = 1 </param>
         /// <param name="pageSize">Опциональное поле для выбора количества выгружаемых строк, со значением по умолчанию = 10</param>
         /// <returns>Возвращает отформатированный список</returns>
-        public async Task<PaginatedResult<EventModel>> GetPagedAsync(string? title, DateTime? from, DateTime? to, int page, int pageSize)
+        public async Task<PaginatedResult<EventModel>> GetPagedAsync(string? title, DateTime? from, DateTime? to, int page, int pageSize, CancellationToken cancellationToken = default)
         {
             var query = _context.Events.AsQueryable();
 
@@ -62,9 +62,25 @@ namespace YAP_middle_csharp_Events.Infrastructure.Repository
         /// </summary>
         /// <param name="id">УИ события</param>
         /// <returns>Сущность события</returns>
-        public async Task<EventModel?> FindByIdAsync(Guid id)
+        public async Task<EventModel?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             return await _context.Events.FirstOrDefaultAsync(x => x.Id == id);
+        }
+
+
+        /// <summary>
+        /// Получение 10 самых популярных событий
+        /// </summary>
+        /// <param name="cancellationToken">токен отмены</param>
+        /// <returns></returns>
+        public async Task<IReadOnlyList<EventModel>> FindTop10EventsAsync(CancellationToken cancellationToken = default)
+        {
+            return await _context.Events
+                .AsNoTracking()
+                .Where(x => x.TotalSeats > 0)
+                .OrderByDescending(x => (double)(x.TotalSeats - x.AvailableSeats) / x.TotalSeats)
+                .Take(10)
+                .ToListAsync(cancellationToken);
         }
 
         /// <summary>
@@ -72,10 +88,10 @@ namespace YAP_middle_csharp_Events.Infrastructure.Repository
         /// </summary>
         /// <param name="item">Сущность события</param>
         /// <returns>Сущность события</returns>
-        public async Task CreateAsync(EventModel item)
+        public async Task CreateAsync(EventModel item, CancellationToken cancellationToken = default)
         {
-            _context.Events.Add(item);
-            await _context.SaveChangesAsync();
+            await _context.Events.AddAsync(item, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         /// <summary>
@@ -83,10 +99,10 @@ namespace YAP_middle_csharp_Events.Infrastructure.Repository
         /// </summary>
         /// <param name="item">Сущность события</param>
         /// <returns></returns>
-        public async Task UpdateAsync(EventModel item)
+        public async Task UpdateAsync(EventModel item, CancellationToken cancellationToken = default)
         {
             _context.Events.Update(item);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         /// <summary>
@@ -94,10 +110,10 @@ namespace YAP_middle_csharp_Events.Infrastructure.Repository
         /// </summary>
         /// <param name="item">Сущность события</param>
         /// <returns></returns>
-        public async Task DeleteAsync(EventModel item)
+        public async Task DeleteAsync(EventModel item, CancellationToken cancellationToken = default)
         {
             _context.Events.Remove(item);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
     }
 }

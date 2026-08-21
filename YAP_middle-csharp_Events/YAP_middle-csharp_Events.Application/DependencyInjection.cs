@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using YAP_middle_csharp_Events.Application.Interfaces;
 using YAP_middle_csharp_Events.Application.Interfaces.IServices;
+using YAP_middle_csharp_Events.Application.Options;
 using YAP_middle_csharp_Events.Application.Services;
 using YAP_middle_csharp_Events.Application.Validator;
 using YAP_middle_csharp_Events.Domain.Models;
@@ -15,7 +16,6 @@ namespace YAP_middle_csharp_Events.Application
             services.AddScoped<IEventService, EventService>();
 
             services.AddTransient<IValidator<EventModel>, EventValidator>();
-
             return services;
         }
     }
