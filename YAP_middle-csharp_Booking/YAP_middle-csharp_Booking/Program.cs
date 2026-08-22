@@ -7,6 +7,8 @@ using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Serilog;
+using Serilog.Formatting.Compact;
 using System.Diagnostics;
 using System.Text;
 using YAP_middle_csharp_Booking.Application;
@@ -42,6 +44,9 @@ builder.Services.AddOpenApi().AddOpenTelemetry()
         .AddRuntimeInstrumentation()
         .AddPrometheusExporter());
 
+builder.Host.UseSerilog((ctx, cfg) =>
+    cfg.ReadFrom.Configuration(ctx.Configuration)
+       .WriteTo.Console(new CompactJsonFormatter()));
 
 
 builder.Services.AddInfrastructure(builder.Configuration, connectionString);
