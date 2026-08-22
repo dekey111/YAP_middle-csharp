@@ -12,7 +12,7 @@ namespace YAP_middle_csharp_Booking.Application.Interfaces.IRepositories
         /// <summary>
         /// Метод для нахождения необработанных броней
         /// </summary>
-        Task<IEnumerable<BookingModel>> FindPendingBookingsAsync();
+        Task<IEnumerable<BookingModel>> FindPendingBookingsAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Получение записей с пагинацией страниц
@@ -23,14 +23,14 @@ namespace YAP_middle_csharp_Booking.Application.Interfaces.IRepositories
         /// <param name="page">Опциональное поле для выбора страницы, со значением по умолчанию = 1 </param>
         /// <param name="pageSize">Опциональное поле для выбора количества выгружаемых строк, со значением по умолчанию = 10</param>
         /// <returns>Возвращает отформатированный список</returns>
-        Task<PaginatedResult<BookingModel>> GetPagedAsync(string? title, DateTime? from, DateTime? to, int page, int pageSize);
+        Task<PaginatedResult<BookingModel>> GetPagedAsync(string? title, DateTime? from, DateTime? to, int page, int pageSize, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Поиск количества активных броней у пользователя
         /// </summary>
         /// <param name="userId">Принимает УИ пользователя</param>
         /// <returns>Возвращает количетсво активных бронирований у пользователя</returns>
-        Task<int> CheckActiveCountBookingByUserId(Guid userId);
+        Task<int> CheckActiveCountBookingByUserId(Guid userId, CancellationToken cancellationToken = default);
 
 
         /// <summary>
@@ -38,27 +38,27 @@ namespace YAP_middle_csharp_Booking.Application.Interfaces.IRepositories
         /// </summary>
         /// <param name="id">Уникальный идентификатор</param>
         /// <returns>Возвращает найденный тип из хранилища</returns>
-        Task<BookingModel?> FindByIdAsync(Guid id);
+        Task<BookingModel?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Сохранение новой сущности в хранилище
         /// </summary>
         /// <param name="entity">Новая сущность</param>
         /// <returns>Ничего не возвращает</returns>
-        Task CreateAsync(BookingModel entity);
+        Task CreateAsync(BookingModel entity, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Обновление существующей сущности в хранилище
         /// </summary>
         /// <param name="entity">Новая сущность</param>
         /// <returns>Ничего не возвращает</returns>
-        Task UpdateAsync(BookingModel entity);
+        Task UpdateAsync(BookingModel entity, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Удаление сущности из хранилища
         /// </summary>
         /// <param name="entity">Сущность для удаления</param>
         /// <returns>Ничего не возвращает</returns>
-        Task DeleteAsync(BookingModel entity);
+        Task DeleteAsync(BookingModel entity, CancellationToken cancellationToken = default);
     }
 }

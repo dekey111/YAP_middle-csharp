@@ -77,7 +77,7 @@ namespace YAP_middle_csharp_Booking.Infrastructure.Services.BackgroundServices
 
                 try
                 {
-                    booking = await bookingRepository.FindByIdAsync(pendingBookId);
+                    booking = await bookingRepository.FindByIdAsync(pendingBookId, stoppingToken);
 
                     if (booking == null || booking.Status != BookingStatusEnum.Pending)
                         return;
@@ -86,7 +86,7 @@ namespace YAP_middle_csharp_Booking.Infrastructure.Services.BackgroundServices
                     _logger.LogInformation("[BackgroundBookingService] Взяли в работу ID: {idBook}", pendingBookId);
                     booking.Status = BookingStatusEnum.Confirmed;
                     booking.ProcessedAt = DateTime.UtcNow;
-                    await bookingRepository.UpdateAsync(booking);
+                    await bookingRepository.UpdateAsync(booking, stoppingToken);
                     _logger.LogInformation("[BackgroundBookingService] Статус брони {idBook} изменен на Confirmed в БД", booking.Id);
 
                     var confirmedEvent = new BookingConfirmedEvent(booking.Id, booking.EventId, booking.UserId, booking.SeatsCount, booking.ProcessedAt.Value);
@@ -107,7 +107,7 @@ namespace YAP_middle_csharp_Booking.Infrastructure.Services.BackgroundServices
                     {
                         booking.Status = BookingStatusEnum.Rejected;
                         booking.ProcessedAt = DateTime.UtcNow;
-                        await bookingRepository.UpdateAsync(booking);
+                        await bookingRepository.UpdateAsync(booking, stoppingToken);
                     }
 
                     throw;
