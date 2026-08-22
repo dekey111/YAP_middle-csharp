@@ -130,7 +130,7 @@ namespace YAP_middle_csharp_Events.Infrastructure.Services
                 try
                 {
                     eventModel.AvailableSeats -= bookingConfirmedEvent.SeatsCount;
-                    await eventRepository.UpdateAsync(eventModel);
+                    await eventRepository.UpdateAsync(eventModel, cancellationToken);
 
                     await processedRepository.AddAsync(new ProcessedBookingsModel(bookingConfirmedEvent.BookingId), cancellationToken);
 
