@@ -3,6 +3,10 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using OpenTelemetry.Exporter;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using StackExchange.Redis;
 using System.Diagnostics;
 using System.Text;
@@ -20,7 +24,29 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 var redisConnectionString = builder.Configuration.GetConnectionString("Redis")
     ?? throw new InvalidOperationException("Connection string 'Redis' not found");
 
+const string serviceName = "events-service";
 
+var otlpEndpoint = builder.Configuration["Otlp:Endpoint"]
+    ?? throw new InvalidOperationException("Otlp:Endpoint not found in configuration");
+
+builder.Services.AddOpenApi().AddOpenTelemetry()
+    .ConfigureResource(resource => resource.AddService(serviceName))
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddEntityFrameworkCoreInstrumentation()
+                .AddOtlpExporter(options =>
+                {
+                    options.Endpoint = new Uri(otlpEndpoint);
+                    options.Protocol = OtlpExportProtocol.Grpc;
+                    options.BatchExportProcessorOptions.ScheduledDelayMilliseconds = 2000;
+                    options.BatchExportProcessorOptions.ExporterTimeoutMilliseconds = 3000;
+                }))
+    .WithMetrics(metrics => metrics
+        .AddAspNetCoreInstrumentation()
+        .AddRuntimeInstrumentation()
+        .AddPrometheusExporter());
+ 
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
     var configuration = ConfigurationOptions.Parse(redisConnectionString, true);
@@ -100,7 +126,10 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
+
 var app = builder.Build();
+
+app.MapPrometheusScrapingEndpoint();
 
 if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
 {
