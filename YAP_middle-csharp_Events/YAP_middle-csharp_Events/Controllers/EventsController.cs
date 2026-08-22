@@ -27,7 +27,7 @@ namespace YAP_middle_csharp_Events.Controllers
         /// <returns>Возвращается Json-Структуру и статусом 200-OK в случае успеха</returns>
         /// <returns>Возвращает 400 в случае ошибки получения страниц или количество элементов на странице</returns>
         [HttpGet]
-        [ProducesResponseType(typeof(PaginatedResult<EventUpdateRequest>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(PaginatedResult<EventContract>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetAllEventsAsync(
             [FromQuery] string? title,
@@ -49,7 +49,7 @@ namespace YAP_middle_csharp_Events.Controllers
         /// <param name="id">Принимает существующий id из списка событий</param>
         /// <returns>Возвращает статус 200 и найденный элемент, либо 404 с комментарием</returns>
         [HttpGet("{id:Guid}")]
-        [ProducesResponseType(typeof(EventUpdateRequest), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(EventContract), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetEventByIdAsync([FromRoute] Guid id, CancellationToken cancellationToken = default)
         {
@@ -72,7 +72,7 @@ namespace YAP_middle_csharp_Events.Controllers
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         [HttpGet("top")]
-        [ProducesResponseType(typeof(IReadOnlyList<EventUpdateRequest>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(IReadOnlyList<EventContract>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetTop10EventsAsync(CancellationToken cancellationToken)
         {
             _logger.LogDebug("[EventsController] [GetTop10Events] Запрос на получение топ-10 событий");
@@ -89,7 +89,7 @@ namespace YAP_middle_csharp_Events.Controllers
         /// <returns>Возвращает 400 в случае ошибки валидации события</returns>
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        [ProducesResponseType(typeof(EventUpdateRequest), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(EventContract), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> AddEventAsync([FromBody] EventRequest eventRequest, CancellationToken cancellationToken = default)
         {
