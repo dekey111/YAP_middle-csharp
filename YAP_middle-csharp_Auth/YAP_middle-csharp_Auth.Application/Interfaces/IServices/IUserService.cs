@@ -10,7 +10,7 @@ namespace YAP_middle_csharp_Auth.Application.Interfaces.IServices
         /// <param name="login">Логин пользователя</param>
         /// <param name="password">Пароль пользователя</param>
         /// <param name="role">Роль пользователя</param>
-        Task RegisterAsync(string login, string password, UserRoleEnum role);
+        Task RegisterAsync(string login, string password, UserRoleEnum role, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Авторизация пользователя
@@ -18,6 +18,6 @@ namespace YAP_middle_csharp_Auth.Application.Interfaces.IServices
         /// <param name="login">Логин пользователя</param>
         /// <param name="password">Пароль пользователя</param>
         /// <returns>Возвращает сгенерированный JWT токен</returns>
-        Task<string> LoginAsync(string login, string password);
+        Task<string> LoginAsync(string login, string password, CancellationToken cancellationToken = default);
     }
 }

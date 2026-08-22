@@ -14,16 +14,21 @@ namespace YAP_middle_csharp_Auth.Application.Services
         }
 
 
-        public bool CheckPassword(UserModel user, string password)
+        public bool CheckPassword(UserModel user, string password, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var checkpassword = _hasher.VerifyHashedPassword(user, user.PasswordHash, password);
             return checkpassword != PasswordVerificationResult.Failed;
         }
 
-        public string HashPassword(string password)
+        public string HashPassword(string password, CancellationToken cancellationToken = default)
         {
+
             if (string.IsNullOrEmpty(password))
                 throw new ArgumentNullException(nameof(password));
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             return _hasher.HashPassword(null!, password);
         }

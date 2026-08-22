@@ -19,8 +19,10 @@ namespace YAP_middle_csharp_Auth.Infrastructure
             _configuration = configuration;
         }
 
-        public string GenerateToken(UserModel user)
+        public string GenerateToken(UserModel user, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var secret = _configuration["JwtSettings:SecretKey"] ?? throw new InvalidOperationException("JWT Secret is not configured");
             var issuer = _configuration["JwtSettings:Issuer"] ?? throw new InvalidOperationException("Issuer is not configured");
             var audience = _configuration["JwtSettings:Audience"] ?? throw new InvalidOperationException("Audience is not configured");
@@ -44,6 +46,8 @@ namespace YAP_middle_csharp_Auth.Infrastructure
                 Expires = DateTime.UtcNow.AddMinutes(expiryMinutes),
                 SigningCredentials = credentials
             };
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             var tokenHandler = new JsonWebTokenHandler();
             return tokenHandler.CreateToken(tokenDescriptor);
