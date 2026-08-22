@@ -121,7 +121,11 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
+
 var app = builder.Build();
+
+app.MapPrometheusScrapingEndpoint();
+
 
 if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
 {
