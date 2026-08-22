@@ -235,7 +235,7 @@ namespace YAP_middle_csharp_Events.Application.Services
                 throw new NotFoundExceptionApp($"Event ID: {id} не найден!");
             }
 
-            await _repository.DeleteAsync(findEvent);
+            await _repository.DeleteAsync(findEvent, cancellationToken);
             await _cacheService.RemoveAsync(CacheKeysHelper.Event(id), cancellationToken);
             _logger.LogInformation("[EventService] [Delete] Event ID: {Id}, успешно удалён!", id);
         }
