@@ -26,33 +26,38 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 var redisConnectionString = builder.Configuration.GetConnectionString("Redis")
     ?? throw new InvalidOperationException("Connection string 'Redis' not found");
 
-const string serviceName = "events-service";
-
-var otlpEndpoint = builder.Configuration["Otlp:Endpoint"]
-    ?? throw new InvalidOperationException("Otlp:Endpoint not found in configuration");
-
-builder.Services.AddOpenApi().AddOpenTelemetry()
-    .ConfigureResource(resource => resource.AddService(serviceName))
-    .WithTracing(tracing => tracing
-        .AddAspNetCoreInstrumentation()
-        .AddHttpClientInstrumentation()
-        .AddEntityFrameworkCoreInstrumentation()
-                .AddOtlpExporter(options =>
-                {
-                    options.Endpoint = new Uri(otlpEndpoint);
-                    options.Protocol = OtlpExportProtocol.Grpc;
-                    options.BatchExportProcessorOptions.ScheduledDelayMilliseconds = 2000;
-                    options.BatchExportProcessorOptions.ExporterTimeoutMilliseconds = 3000;
-                }))
-    .WithMetrics(metrics => metrics
-        .AddAspNetCoreInstrumentation()
-        .AddRuntimeInstrumentation()
-        .AddPrometheusExporter());
-
 
 builder.Host.UseSerilog((ctx, cfg) =>
     cfg.ReadFrom.Configuration(ctx.Configuration)
        .WriteTo.Console(new CompactJsonFormatter()));
+
+var otlpEndpoint = builder.Configuration["Otlp:Endpoint"];
+const string serviceName = "events-service";
+
+var observBuilder = builder.Services.AddOpenApi().AddOpenTelemetry()
+    .ConfigureResource(resource => resource.AddService(serviceName));
+
+observBuilder.WithTracing(tracing => tracing
+    .AddAspNetCoreInstrumentation()
+    .AddHttpClientInstrumentation()
+    .AddEntityFrameworkCoreInstrumentation());
+
+if (!string.IsNullOrEmpty(otlpEndpoint))
+{
+    observBuilder.WithTracing(tracing => tracing
+        .AddOtlpExporter(options =>
+        {
+            options.Endpoint = new Uri(otlpEndpoint);
+            options.Protocol = OtlpExportProtocol.Grpc;
+            options.BatchExportProcessorOptions.ScheduledDelayMilliseconds = 2000;
+            options.BatchExportProcessorOptions.ExporterTimeoutMilliseconds = 3000;
+        }));
+}
+
+observBuilder.WithMetrics(metrics => metrics
+    .AddAspNetCoreInstrumentation()
+    .AddRuntimeInstrumentation()
+    .AddPrometheusExporter());
 
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
