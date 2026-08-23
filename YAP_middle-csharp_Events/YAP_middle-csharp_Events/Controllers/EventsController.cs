@@ -95,8 +95,8 @@ namespace YAP_middle_csharp_Events.Controllers
         {
             _logger.LogDebug("[EventsController] [AddEvent] Запрос на добавление нового события");
 
-            var createdId = await _eventService.CreateAsync(eventRequest, cancellationToken);
-            return CreatedAtAction(nameof(GetEventByIdAsync), new { id = createdId }, new { id = createdId });
+            var createdEvent = await _eventService.CreateAsync(eventRequest, cancellationToken);
+            return CreatedAtAction(nameof(GetEventByIdAsync), new { id = createdEvent.Id }, createdEvent);
         }
 
         /// <summary>

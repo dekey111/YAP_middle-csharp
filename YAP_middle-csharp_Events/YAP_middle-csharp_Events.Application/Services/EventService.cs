@@ -144,7 +144,7 @@ namespace YAP_middle_csharp_Events.Application.Services
         /// <param name="entity">Принимает модель события</param>
         /// <returns>Возвращает уникальный идентификатор нового события</returns>
         /// <exception cref="ValidationExceptionApp">Выбрасывается, в случае если передана пустая модель</exception>
-        public async Task<Guid> CreateAsync(EventRequest eventRequest, CancellationToken cancellationToken = default)
+        public async Task<EventContract> CreateAsync(EventRequest eventRequest, CancellationToken cancellationToken = default)
         {
             _logger.LogDebug("[EventService] [Create] Попытка создания Event");
 
@@ -174,7 +174,7 @@ namespace YAP_middle_csharp_Events.Application.Services
             await _repository.CreateAsync(eventModel, cancellationToken);
             _logger.LogInformation("[EventService] [Create] Создано Event ID: {Id}", eventModel.Id);
             await _cacheService.RemoveAsync(CacheKeysHelper.TopEvents(), cancellationToken);
-            return eventModel.Id;
+            return eventModel.MapToContract();
         }
 
         /// <summary>
