@@ -32,7 +32,7 @@ namespace YAP_middle_csharp_Booking.Application.Interfaces.IServices
         /// </summary>
         /// <param name="entity">Объект сущности с обновленными данными</param>
         /// <returns>Возвращает обновленный объект сущности</returns>
-        Task<BookingModel> UpdateAsync(BookingModel bookingModel);
+        Task<BookingModel> UpdateAsync(BookingModel bookingModel, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Метод отмены бронирования

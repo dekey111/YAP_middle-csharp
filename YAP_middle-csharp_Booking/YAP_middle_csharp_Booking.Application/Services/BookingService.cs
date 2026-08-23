@@ -85,7 +85,7 @@ namespace YAP_middle_csharp_Booking.Application.Services
         /// </summary>
         /// <param name="entity">Объект сущности с обновленными данными</param>
         /// <returns>Возвращает обновленный объект сущности</returns>
-        public async Task<BookingModel> UpdateAsync(BookingModel entity)
+        public async Task<BookingModel> UpdateAsync(BookingModel entity, CancellationToken cancellationToken = default)
         {
             if (entity is null)
                 throw new ValidationExceptionApp(nameof(entity));

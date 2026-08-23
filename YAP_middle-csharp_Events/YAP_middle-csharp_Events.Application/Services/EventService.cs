@@ -127,7 +127,7 @@ namespace YAP_middle_csharp_Events.Application.Services
 
                 var findTop10Db = await _repository.FindTop10EventsAsync(cancellationToken);
                 var resultDtos = findTop10Db.Select(x => x.MapToContract()).ToList();
-                await _cacheService.SetAsync(cacheKey, resultDtos, _cacheOptions.Top10EventsTtl, cancellationToken);
+                await _cacheService.SetAsync(cacheKey, resultDtos, _cacheOptions.Top10EventsTTL, cancellationToken);
                 _logger.LogDebug("[EventService] [FindTop10EventsAsync] Нашли данные в БД, записали в Кеш и вернули пользователю");
 
                 return resultDtos;
