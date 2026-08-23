@@ -69,7 +69,7 @@ namespace YAP_middle_csharp_Auth.Controllers
         /// <param name="request">Принимает данные авторизации</param>
         /// <returns>Возвращает JWT токен</returns>
         [HttpPost("login")]
-        [ProducesResponseType(typeof(LoginRequest), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> LoginAsync([FromBody] LoginRequest request, CancellationToken cancellationToken = default)
         {
