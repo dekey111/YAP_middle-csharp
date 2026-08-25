@@ -72,8 +72,8 @@ namespace YAP_middle_csharp_Events.FuncTest
                 StartAt = DateTime.UtcNow.AddMonths(2),
                 EndAt = DateTime.UtcNow.AddMonths(3)
             };
-            var newEventId = await _eventService.CreateAsync(newEvent);
-            var findEvent = await _eventService.FindByIdAsync(newEventId);
+            var createdEvent = await _eventService.CreateAsync(newEvent);
+            var findEvent = await _eventService.FindByIdAsync(createdEvent.Id);
 
             Assert.NotNull(findEvent);
             Assert.Equal("Рок концерт", findEvent?.Title);
@@ -89,7 +89,7 @@ namespace YAP_middle_csharp_Events.FuncTest
                 StartAt = DateTime.UtcNow,
                 EndAt = DateTime.UtcNow.AddDays(1)
             };
-            var newEventId = await _eventService.CreateAsync(newEvent);
+            var createdEvent = await _eventService.CreateAsync(newEvent);
             _context.ChangeTracker.Clear();
 
             var eventToUpdate = new EventUpdateRequest
@@ -100,10 +100,10 @@ namespace YAP_middle_csharp_Events.FuncTest
                 EndAt = DateTime.UtcNow.AddDays(1)
             };
 
-            await _eventService.UpdateAsync(newEventId, eventToUpdate);
+            await _eventService.UpdateAsync(createdEvent.Id, eventToUpdate);
 
             _context.ChangeTracker.Clear();
-            var result = await _eventService.FindByIdAsync(newEventId);
+            var result = await _eventService.FindByIdAsync(createdEvent.Id);
 
             Assert.NotNull(result);
             Assert.Equal("Курсы C#", result?.Title);
@@ -120,13 +120,13 @@ namespace YAP_middle_csharp_Events.FuncTest
                 EndAt = DateTime.UtcNow
             };
 
-            var newEventId = await _eventService.CreateAsync(newEvent);
+            var createdEvent = await _eventService.CreateAsync(newEvent);
 
             _context.ChangeTracker.Clear();
-            await _eventService.DeleteAsync(newEventId);
+            await _eventService.DeleteAsync(createdEvent.Id);
 
             _context.ChangeTracker.Clear();
-            await Assert.ThrowsAsync<NotFoundExceptionApp>(() => _eventService.FindByIdAsync(newEventId));
+            await Assert.ThrowsAsync<NotFoundExceptionApp>(() => _eventService.FindByIdAsync(createdEvent.Id));
         }
 
         [Fact]
