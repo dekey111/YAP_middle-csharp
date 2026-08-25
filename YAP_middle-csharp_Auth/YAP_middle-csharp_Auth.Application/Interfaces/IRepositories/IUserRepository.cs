@@ -15,20 +15,20 @@ namespace YAP_middle_csharp_Auth.Application.Interfaces.IRepositories
         /// </summary>
         /// <param name="id">УИ</param>
         /// <returns>Возвращает найденную сущность, нибо 404-NotFound</returns>
-        Task<UserModel> FindByIdAsync(Guid id);
+        Task<UserModel> FindByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Поиск пользователя по логину
         /// </summary>
         /// <param name="login">логин пользователя</param>
         /// <returns>Возвращает найденную сущность, нибо 404-NotFound</returns>
-        Task<UserModel?> FindByLoginAsync(string login);
+        Task<UserModel?> FindByLoginAsync(string login, CancellationToken cancellationToken = default);
 
 
         /// <summary>
         /// Создание нового пользователя
         /// </summary>
         /// <param name="user">Сущность пользователя</param>
-        Task CreateAsync(UserModel user);
+        Task CreateAsync(UserModel user, CancellationToken cancellationToken = default);
     }
 }

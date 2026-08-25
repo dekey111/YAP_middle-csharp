@@ -25,7 +25,7 @@ namespace YAP_middle_csharp_Auth.Controllers
         [HttpPost("register-user")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> RegisterUserAsync([FromBody] LoginRequest request)
+        public async Task<IActionResult> RegisterUserAsync([FromBody] LoginRequest request, CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("[AuthController] [RegisterUserAsync] Запрос на регистрацию пользователя: {Login}", request.Login);
 
@@ -35,7 +35,7 @@ namespace YAP_middle_csharp_Auth.Controllers
                 throw new ValidationExceptionApp("Проверьте правильность заполненных данных!");
             }
 
-            await _userService.RegisterAsync(request.Login, request.Password, UserRoleEnum.User);
+            await _userService.RegisterAsync(request.Login, request.Password, UserRoleEnum.User, cancellationToken);
             return NoContent();
         }
 
@@ -48,7 +48,7 @@ namespace YAP_middle_csharp_Auth.Controllers
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> RegisterAdminAsync([FromBody] LoginRequest request)
+        public async Task<IActionResult> RegisterAdminAsync([FromBody] LoginRequest request, CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("[AuthController] [RegisterAdminAsync] Запрос на регистрацию администратора: {Login}", request.Login);
 
@@ -59,7 +59,7 @@ namespace YAP_middle_csharp_Auth.Controllers
                 throw new ValidationExceptionApp("Проверьте правильность заполненных данных!");
             }
 
-            await _userService.RegisterAsync(request.Login, request.Password, UserRoleEnum.Admin);
+            await _userService.RegisterAsync(request.Login, request.Password, UserRoleEnum.Admin, cancellationToken);
             return NoContent();
         }
 
@@ -69,9 +69,9 @@ namespace YAP_middle_csharp_Auth.Controllers
         /// <param name="request">Принимает данные авторизации</param>
         /// <returns>Возвращает JWT токен</returns>
         [HttpPost("login")]
-        [ProducesResponseType(typeof(LoginRequest), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> LoginAsync([FromBody] LoginRequest request)
+        public async Task<IActionResult> LoginAsync([FromBody] LoginRequest request, CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("[AuthController] Запрос на вход пользователя: {Login}", request.Login);
 
@@ -82,7 +82,7 @@ namespace YAP_middle_csharp_Auth.Controllers
             }
 
 
-            var token = await _userService.LoginAsync(request.Login, request.Password);
+            var token = await _userService.LoginAsync(request.Login, request.Password, cancellationToken);
             return Ok(new LoginResponse { Token = token });
         }
 

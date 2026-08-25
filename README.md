@@ -7,9 +7,13 @@
 - ASP.NET Core Web API
 - PostgreSQL 16 (по отдельной БД на сервис)
 - Apache Kafka (асинхронное взаимодействие)
+- Redis (централизованное хранилище кеша)
 - Entity Framework Core 10
 - Swagger/OpenAPI
 - Docker & Docker Compose
+- Jaeger — трейсы 
+- Prometheus — метрики 
+- Grafana — дашборды 
 
 ## Архитектура проекта и структура слоев
 
@@ -70,6 +74,11 @@
   - bookings-db: localhost:5435
 
 ### 6. **Kafka:** localhost:9092
+
+### 7. **Jaeger:** [localhost:16686](http://localhost:16686)
+### 8. **Prometheus:** [localhost:9090](http://localhost:9090)
+### 9. **Grafana:** [localhost:3000](http://localhost:3000), admin/admin
+
 
 
 ## Поток данных (BookingConfirmed)
@@ -177,6 +186,22 @@
 - Для каждой найденной записи выполняется изменение статуса меняется на Confirmed 
 - После обработки обновляется поле ProcessedAt
 - Изменения сохраняются
+
+## Наблюдаемость
+В проекте реализован полный стек наблюдаемости:
+
+- **OpenTelemetry** — сбор телеметрии (трейсы и метрики) из сервисов
+- **Jaeger** — распределенная трассировка запросов
+- **Prometheus** — сбор и хранение метрик
+- **Grafana** — визуализация метрик и дашборды
+- **Serilog** — структурированное логирование в JSON-формате
+
+Каждый микросервис экспортирует метрики в формате Prometheus по эндпоинту `/metrics`:
+
+Auth:     http://localhost:5003/metrics
+Events:   http://localhost:5002/metrics
+Booking:  http://localhost:5001/metrics
+
 
 Запуск тестов:
 `dotnet test <путь до проекта>`

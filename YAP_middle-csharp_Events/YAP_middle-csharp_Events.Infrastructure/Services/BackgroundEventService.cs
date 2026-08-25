@@ -105,7 +105,7 @@ namespace YAP_middle_csharp_Events.Infrastructure.Services
                 }
 
 
-                var eventModel = await eventRepository.FindByIdAsync(bookingConfirmedEvent.EventId);
+                var eventModel = await eventRepository.FindByIdAsync(bookingConfirmedEvent.EventId, cancellationToken);
                 if (eventModel == null)
                 {
                     _logger.LogWarning("[BackgroundEventService] Событие {EventId} не найдено для брони {BookingId}. Пропуск.",
@@ -130,7 +130,7 @@ namespace YAP_middle_csharp_Events.Infrastructure.Services
                 try
                 {
                     eventModel.AvailableSeats -= bookingConfirmedEvent.SeatsCount;
-                    await eventRepository.UpdateAsync(eventModel);
+                    await eventRepository.UpdateAsync(eventModel, cancellationToken);
 
                     await processedRepository.AddAsync(new ProcessedBookingsModel(bookingConfirmedEvent.BookingId), cancellationToken);
 

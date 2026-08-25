@@ -27,17 +27,17 @@ namespace YAP_middle_csharp_Auth.Application.Services
         /// <param name="role">Принимает роль</param>
         /// <returns>Возвращает нового пользователя</returns>
         /// <exception cref="ValidationExceptionApp">В случае если такой логин уже существует</exception>
-        public async Task RegisterAsync(string login, string password, UserRoleEnum role)
+        public async Task RegisterAsync(string login, string password, UserRoleEnum role, CancellationToken cancellationToken = default)
         {
-            var findUser = await _userRepository.FindByLoginAsync(login);
+            var findUser = await _userRepository.FindByLoginAsync(login, cancellationToken);
             if (findUser != null)
             {
                 throw new ValidationExceptionApp("Пользователь с таким логином уже существует");
             }
 
-            var passwordHash = _passwordHasher.HashPassword(password);
+            var passwordHash = _passwordHasher.HashPassword(password, cancellationToken);
             var newUser = new UserModel(login, passwordHash, role);
-            await _userRepository.CreateAsync(newUser);
+            await _userRepository.CreateAsync(newUser, cancellationToken);
         }
 
         /// <summary>
@@ -47,21 +47,21 @@ namespace YAP_middle_csharp_Auth.Application.Services
         /// <param name="password">Принимает пароль</param>
         /// <returns>Возвращает JWT токен</returns>
         /// <exception cref="UnauthorizedException">В случае если логин или пароль не совпадает</exception>
-        public async Task<string> LoginAsync(string login, string password)
+        public async Task<string> LoginAsync(string login, string password, CancellationToken cancellationToken = default)
         {
-            var findUser = await _userRepository.FindByLoginAsync(login);
+            var findUser = await _userRepository.FindByLoginAsync(login, cancellationToken);
             if (findUser == null)
             {
                 throw new UnauthorizedException();
             }
 
-            bool isPasswordValid = _passwordHasher.CheckPassword(findUser, password);
+            bool isPasswordValid = _passwordHasher.CheckPassword(findUser, password, cancellationToken);
             if (!isPasswordValid)
             {
                 throw new UnauthorizedException();
             }
 
-            return _jwtTokenGenerator.GenerateToken(findUser);
+            return _jwtTokenGenerator.GenerateToken(findUser, cancellationToken);
         }
     }
 

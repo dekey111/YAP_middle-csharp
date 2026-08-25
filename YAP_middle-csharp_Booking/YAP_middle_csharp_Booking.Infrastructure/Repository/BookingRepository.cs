@@ -19,7 +19,7 @@ namespace YAP_middle_csharp_Booking.Infrastructure.Repository
         /// <param name="page">Опциональное поле для выбора страницы, со значением по умолчанию = 1 </param>
         /// <param name="pageSize">Опциональное поле для выбора количества выгружаемых строк, со значением по умолчанию = 10</param>
         /// <returns>Возвращает отформатированный список</returns>
-        public async Task<PaginatedResult<BookingModel>> GetPagedAsync(string? title, DateTime? from, DateTime? to, int page, int pageSize)
+        public async Task<PaginatedResult<BookingModel>> GetPagedAsync(string? title, DateTime? from, DateTime? to, int page, int pageSize, CancellationToken cancellationToken = default)
         {
             var query = _context.Bookings.AsQueryable();
 
@@ -38,8 +38,8 @@ namespace YAP_middle_csharp_Booking.Infrastructure.Repository
             {
                 query = query.Where(x => x.ProcessedAt != null && x.ProcessedAt.Value.Date == to.Value.Date);
             }
-            var totalCount = await query.CountAsync();
-            var resultQuery = await query.OrderByDescending(x => x.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            var totalCount = await query.CountAsync(cancellationToken);
+            var resultQuery = await query.OrderByDescending(x => x.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
 
             return new PaginatedResult<BookingModel>
             {
@@ -54,11 +54,11 @@ namespace YAP_middle_csharp_Booking.Infrastructure.Repository
         /// Метод для нахождения необработанных броней
         /// </summary>
         /// <returns></returns>
-        public async Task<IEnumerable<BookingModel>> FindPendingBookingsAsync()
+        public async Task<IEnumerable<BookingModel>> FindPendingBookingsAsync(CancellationToken cancellationToken = default)
         {
             return await _context.Bookings
                 .Where(x => x.Status == BookingStatusEnum.Pending)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
         /// <summary>
@@ -66,9 +66,9 @@ namespace YAP_middle_csharp_Booking.Infrastructure.Repository
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public async Task<BookingModel?> FindByIdAsync(Guid id)
+        public async Task<BookingModel?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            return await _context.Bookings.FirstOrDefaultAsync(x => x.Id == id);
+            return await _context.Bookings.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         }
 
         /// <summary>
@@ -76,36 +76,36 @@ namespace YAP_middle_csharp_Booking.Infrastructure.Repository
         /// </summary>
         /// <param name="entity">Сущность бронирования</param>
         /// <returns>Сущность бронирования</returns>
-        public async Task CreateAsync(BookingModel entity)
+        public async Task CreateAsync(BookingModel entity, CancellationToken cancellationToken = default)
         {
-            _context.Bookings.Add(entity);
-            await _context.SaveChangesAsync();
+            await _context.Bookings.AddAsync(entity, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         /// <summary>
         /// Метод обновления бронирования
         /// </summary>
         /// <param name="entity">Сущность бронирования</param>
-        public async Task UpdateAsync(BookingModel entity)
+        public async Task UpdateAsync(BookingModel entity, CancellationToken cancellationToken = default)
         {
             _context.Bookings.Update(entity);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         /// <summary>
         /// Метод удаления бронирования
         /// </summary>
         /// <param name="entity">Сущность бронирования</param>
-        public async Task DeleteAsync(BookingModel entity)
+        public async Task DeleteAsync(BookingModel entity, CancellationToken cancellationToken = default)
         {
             _context.Bookings.Remove(entity);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task<int> CheckActiveCountBookingByUserId(Guid userId)
+        public async Task<int> CheckActiveCountBookingByUserId(Guid userId, CancellationToken cancellationToken = default)
         {
             return await _context.Bookings.CountAsync(x => x.UserId == userId &&
-            (x.Status == BookingStatusEnum.Pending || x.Status == BookingStatusEnum.Confirmed));
+            (x.Status == BookingStatusEnum.Pending || x.Status == BookingStatusEnum.Confirmed), cancellationToken);
         }
     }
 

@@ -27,14 +27,14 @@ namespace YAP_middle_csharp_Booking.Controllers
         [Authorize]
         [ProducesResponseType(typeof(BookingModel), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetBookingAsync([FromRoute] Guid id)
+        public async Task<IActionResult> GetBookingAsync([FromRoute] Guid id, CancellationToken cancellationToken = default)
         {
             var idUserFromRequest = _userContext.GetCurrentUserId(User);
             var currentUserRole = _userContext.GetCurrentUserRole(User);
 
             _logger.LogInformation("[BookingsController] Запрос данных брони {BookingId}", id);
 
-            var booking = await _bookingService.FindByIdForUserAsync(id, idUserFromRequest, currentUserRole);
+            var booking = await _bookingService.FindByIdForUserAsync(id, idUserFromRequest, currentUserRole, cancellationToken);
             return Ok(booking);
         }
 
@@ -49,13 +49,13 @@ namespace YAP_middle_csharp_Booking.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-        public async Task<IActionResult> AddBookingByEventIdAsync([FromBody] CreateBookingRequest request)
+        public async Task<IActionResult> AddBookingByEventIdAsync([FromBody] CreateBookingRequest request, CancellationToken cancellationToken = default)
         {
             var userId = _userContext.GetCurrentUserId(User);
 
             _logger.LogInformation("[BookingsController] Запрос на бронирование события {EventId} пользователем {UserId}", request.EventId, userId);
 
-            var newBooking = await _bookingService.CreateBookingAsync(request.EventId, userId, request.SeatsCount);
+            var newBooking = await _bookingService.CreateBookingAsync(request.EventId, userId, request.SeatsCount, cancellationToken);
             return AcceptedAtAction(nameof(GetBookingAsync), new { id = newBooking.Id }, newBooking);
         }
 
@@ -71,14 +71,14 @@ namespace YAP_middle_csharp_Booking.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> CancelBookingAsync([FromRoute] Guid bookingId, [FromQuery] Guid? eventId)
+        public async Task<IActionResult> CancelBookingAsync([FromRoute] Guid bookingId, [FromQuery] Guid? eventId, CancellationToken cancellationToken = default)
         {
             var currentUserId = _userContext.GetCurrentUserId(User);
             var currentUserRole = _userContext.GetCurrentUserRole(User);
 
             _logger.LogInformation("[BookingsController] Запрос на отмену брони {BookingId}", bookingId);
 
-            await _bookingService.CancelledBookingAsync(eventId ?? Guid.Empty, bookingId, currentUserId, currentUserRole);
+            await _bookingService.CancelledBookingAsync(eventId ?? Guid.Empty, bookingId, currentUserId, currentUserRole, cancellationToken);
             return NoContent();
         }
     }

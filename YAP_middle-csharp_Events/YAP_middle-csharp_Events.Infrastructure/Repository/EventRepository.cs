@@ -39,13 +39,13 @@ namespace YAP_middle_csharp_Events.Infrastructure.Repository
                 query = query.Where(x => x.EndAt.Date <= to.Value.Date);
             }
 
-            var totalCount = await query.CountAsync();
+            var totalCount = await query.CountAsync(cancellationToken);
 
             var items = await query
                 .OrderByDescending(x => x.EndAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             return new PaginatedResult<EventModel>
             {
@@ -64,7 +64,7 @@ namespace YAP_middle_csharp_Events.Infrastructure.Repository
         /// <returns>Сущность события</returns>
         public async Task<EventModel?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            return await _context.Events.FirstOrDefaultAsync(x => x.Id == id);
+            return await _context.Events.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         }
 
 

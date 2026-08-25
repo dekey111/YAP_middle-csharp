@@ -127,7 +127,7 @@ namespace YAP_middle_csharp_Events.Application.Services
 
                 var findTop10Db = await _repository.FindTop10EventsAsync(cancellationToken);
                 var resultDtos = findTop10Db.Select(x => x.MapToContract()).ToList();
-                await _cacheService.SetAsync(cacheKey, resultDtos, _cacheOptions.Top10EventsTtl, cancellationToken);
+                await _cacheService.SetAsync(cacheKey, resultDtos, _cacheOptions.Top10EventsTTL, cancellationToken);
                 _logger.LogDebug("[EventService] [FindTop10EventsAsync] Нашли данные в БД, записали в Кеш и вернули пользователю");
 
                 return resultDtos;
@@ -144,7 +144,7 @@ namespace YAP_middle_csharp_Events.Application.Services
         /// <param name="entity">Принимает модель события</param>
         /// <returns>Возвращает уникальный идентификатор нового события</returns>
         /// <exception cref="ValidationExceptionApp">Выбрасывается, в случае если передана пустая модель</exception>
-        public async Task<Guid> CreateAsync(EventRequest eventRequest, CancellationToken cancellationToken = default)
+        public async Task<EventContract> CreateAsync(EventRequest eventRequest, CancellationToken cancellationToken = default)
         {
             _logger.LogDebug("[EventService] [Create] Попытка создания Event");
 
@@ -174,7 +174,7 @@ namespace YAP_middle_csharp_Events.Application.Services
             await _repository.CreateAsync(eventModel, cancellationToken);
             _logger.LogInformation("[EventService] [Create] Создано Event ID: {Id}", eventModel.Id);
             await _cacheService.RemoveAsync(CacheKeysHelper.TopEvents(), cancellationToken);
-            return eventModel.Id;
+            return eventModel.MapToContract();
         }
 
         /// <summary>
@@ -235,7 +235,7 @@ namespace YAP_middle_csharp_Events.Application.Services
                 throw new NotFoundExceptionApp($"Event ID: {id} не найден!");
             }
 
-            await _repository.DeleteAsync(findEvent);
+            await _repository.DeleteAsync(findEvent, cancellationToken);
             await _cacheService.RemoveAsync(CacheKeysHelper.Event(id), cancellationToken);
             _logger.LogInformation("[EventService] [Delete] Event ID: {Id}, успешно удалён!", id);
         }
